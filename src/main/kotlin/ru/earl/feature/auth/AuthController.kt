@@ -1,4 +1,4 @@
-package ru.earl.feature.auth.register
+package ru.earl.feature.auth
 
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -6,10 +6,6 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
-import ru.earl.feature.auth.AuthResponse
-import ru.earl.feature.auth.LoginRequest
-import ru.earl.feature.auth.RegisterRequest
-import ru.earl.feature.auth.TokenResponse
 import ru.earl.models.users.User
 import ru.earl.models.users.UserDto
 import ru.earl.security.hashing.HashingService
@@ -19,7 +15,7 @@ import ru.earl.security.token.TokenConfig
 import ru.earl.security.token.TokenService
 import java.util.*
 
-class RegisterController(
+class AuthController(
     private val hashingService: HashingService,
     private val tokenService: TokenService,
     private val tokenConfig: TokenConfig,
@@ -74,7 +70,7 @@ class RegisterController(
             println("login token  $token")
             call.respond(
                 status = HttpStatusCode.OK,
-                message = AuthResponse(
+                message = AuthResponses(
                     token = token
                 )
             )
@@ -86,7 +82,6 @@ class RegisterController(
         println("principal -> $principal")
         val userId = principal?.getClaim("userId", String::class)
         println("userId -> $userId")
-//        call.respond(HttpStatusCode.OK, "Your userId is $userId")
         call.respond(HttpStatusCode.OK, TokenResponse(userId!!))
     }
 }
