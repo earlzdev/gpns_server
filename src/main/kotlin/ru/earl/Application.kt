@@ -2,7 +2,7 @@ package ru.earl
 
 import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.Database
-import ru.earl.feature.auth.register.configureRegisterRouting
+import ru.earl.feature.auth.configureAuthenticationRouting
 import ru.earl.plugins.*
 import ru.earl.security.token.TokenConfig
 
@@ -28,5 +28,5 @@ fun Application.module() {
     configureSecurity(tokenConfig)
     configureRouting()
     //jwt
-    configureRegisterRouting(tokenConfig)
+    configureAuthenticationRouting(tokenConfig)
 }
