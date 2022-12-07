@@ -3,6 +3,7 @@ package ru.earl
 import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.Database
 import ru.earl.feature.auth.configureAuthenticationRouting
+import ru.earl.feature.chat.configureChatRouting
 import ru.earl.plugins.*
 import ru.earl.security.token.TokenConfig
 
@@ -29,4 +30,6 @@ fun Application.module() {
     configureRouting()
     //jwt
     configureAuthenticationRouting(tokenConfig)
+    //chat
+    configureChatRouting()
 }

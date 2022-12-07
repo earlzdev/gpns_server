@@ -6,6 +6,8 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
+import ru.earl.models.userDetails.UserDetails
+import ru.earl.models.userDetails.UserDetailsDto
 import ru.earl.models.users.User
 import ru.earl.models.users.UserDto
 import ru.earl.security.hashing.HashingService
@@ -23,28 +25,35 @@ class AuthController(
 
     suspend fun register(call: ApplicationCall) {
         val request = call.receive<RegisterRequest>()
-        println("request $request")
         try {
+            val userId = UUID.nameUUIDFromBytes(request.email.toByteArray()).toString()
             val saltedHash = hashingService.generateSaltedHash(request.password)
             val user = UserDto(
                 request.email,
                 request.username,
                 saltedHash.hash,
                 saltedHash.salt,
-                UUID.nameUUIDFromBytes(request.email.toByteArray()).toString()
+                userId
+            )
+            val userDetails = UserDetailsDto(
+                userId,
+                "",
+                request.username,
+                ""
             )
             User.insert(user)
+            UserDetails.insertUserDetails(userDetails)
             call.respond(HttpStatusCode.OK, "success")
         } catch (e: Exception) {
-            println("error $e")
+            e.printStackTrace()
             call.respond(HttpStatusCode.InternalServerError, "$e")
         }
     }
 
     suspend fun login(call: ApplicationCall) {
         val request = call.receive<LoginRequest>()
-        println("request ligin $request")
-        val user = User.fetchUser(request.email)
+        println("request login $request")
+        val user = User.fetchUserByEmail(request.email)
         println("login fetchuser -> $user")
         val isValidPassword = hashingService.verify(
             value = request.password,
