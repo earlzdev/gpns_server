@@ -25,7 +25,7 @@ object User : Table("users") {
         }
     }
 
-    fun fetchUser(emailInput: String): UserDto? {
+    fun fetchUserByEmail(emailInput: String): UserDto? {
         return try {
             transaction {
                 val user = User.select { email.eq(emailInput) }.single()
@@ -40,6 +40,65 @@ object User : Table("users") {
         } catch (e: Exception) {
             e.printStackTrace()
             null
+        }
+    }
+
+    fun fetchUserById(id: String) : UserDto? {
+        return try {
+            transaction {
+                val resultRow = User.select { userId.eq(id) }.single()
+                UserDto(
+                    resultRow[email],
+                    resultRow[username],
+                    resultRow[password],
+                    resultRow[userSalt],
+                    resultRow[userId]
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    fun fetchUserByUsername(name: String) : UserDto? {
+        return try {
+            transaction {
+                val resultRow = User.select { username.eq(name) }.single()
+                UserDto(
+                    resultRow[email],
+                    resultRow[username],
+                    resultRow[password],
+                    resultRow[userSalt],
+                    resultRow[userId]
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    fun fetchPossibleContacts(id: String) : List<UserDto?> {
+        return try {
+            transaction {
+                val resultRowList = User.select { userId.neq(id) }.toList()
+                val usersList = mutableListOf<UserDto>()
+                for (item in resultRowList) {
+                    val user =  UserDto(
+                        item[email],
+                        item[username],
+                        item[password],
+                        item[userSalt],
+                        item[userId]
+                    )
+                    usersList.add(user)
+                }
+               usersList
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
         }
     }
 }
