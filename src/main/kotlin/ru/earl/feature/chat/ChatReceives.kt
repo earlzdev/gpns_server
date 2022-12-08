@@ -40,3 +40,9 @@ data class RoomTokenReceive(
 data class MessageId(
     val messageId: String
 )
+
+@Serializable
+data class MarkAuthoredMessageAsReadRequest(
+    val roomId: String,
+    val authorName: String
+)

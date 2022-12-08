@@ -1,7 +1,7 @@
 package ru.earl.models.rooms
 
 import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object Room : Table("rooms") {
@@ -13,6 +13,8 @@ object Room : Table("rooms") {
     private val lastMessage = Room.varchar("last_message", 1000)
     private val lastMessageAuthor = Room.varchar("last_message_author", 25)
     private val deletable = Room.varchar("deletable", 10)
+    private val unreadMsgCount = Room.integer("unreadMsgCount")
+    private val lastMsgRead = Room.integer("lastMsgRead")
 
     fun insertRoom(room: RoomDto) {
         try {
@@ -25,6 +27,7 @@ object Room : Table("rooms") {
                     it[lastMessage] = room.last_message
                     it[lastMessageAuthor] = room.last_message_author
                     it[deletable] = room.deletable
+                    it[unreadMsgCount] = room.unreadMsgCount
                 }
             }
         } catch (e: Exception) {
@@ -43,7 +46,9 @@ object Room : Table("rooms") {
                     resultRow[contact_name],
                     resultRow[lastMessage],
                     resultRow[lastMessageAuthor],
-                    resultRow[deletable]
+                    resultRow[deletable],
+                    resultRow[unreadMsgCount],
+                    resultRow[lastMsgRead]
                 )
             }
         } catch (e: Exception) {
@@ -68,6 +73,55 @@ object Room : Table("rooms") {
                 Room.update({ roomId eq room_id}) {
                     it[lastMessage] = newLastMessage
                     it[lastMessageAuthor] = author
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun increaseRoomUnreadMessagesCount(room_Id: String) {
+        println("INCREASE UNREAD MSG COUNTER")
+         try {
+            transaction {
+                Room.update({ roomId eq room_Id }) {
+                    it[unreadMsgCount] = unreadMsgCount + 1
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun clearRoomUnreadMessagesCounter(room_Id: String) {
+        try {
+            transaction {
+                Room.update({ roomId eq room_Id }) {
+                    it[unreadMsgCount] = 0
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun updateLastMessageReadStateToRead(room_id: String) {
+        try {
+            transaction {
+                Room.update({ roomId eq room_id }) {
+                    it[lastMsgRead] = 1
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun updateLastMessageReadStateToUnread(room_id: String) {
+        try {
+            transaction {
+                Room.update({ roomId eq room_id }) {
+                    it[lastMsgRead] = 0
                 }
             }
         } catch (e: Exception) {
