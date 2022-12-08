@@ -57,14 +57,17 @@ fun Application.configureChatRouting() {
             post("/fetchMessagesForRoom") {
                 chatController.fetchAllMessages(call)
             }
+            post("/markAuthoredMessagesAsRead") {
+                chatController.markAuthoredMessagesAsRead(call)
+            }
             post("/deleteRoom") {
                 chatController.deleteRoom(call)
             }
-            post("/fetchUnreadMessagesInRoom") {
-                chatController.fetchUnreadMessagesInRoom(call)
-            }
             post("/markMessagesAsRead") {
                 chatController.markMessagesAsRead(call)
+            }
+            post("/updateLastMsgReadState") {
+                chatController.updateLastMsgReadState(call)
             }
         }
     }

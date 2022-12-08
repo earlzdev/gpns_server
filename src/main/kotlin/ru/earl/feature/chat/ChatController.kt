@@ -6,9 +6,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
-import io.ktor.util.reflect.*
 import io.ktor.websocket.*
-import io.ktor.websocket.serialization.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -20,7 +18,10 @@ import ru.earl.models.roomsMessages.RoomsMessagesDto
 import ru.earl.models.roomsUsers.RoomsUsers
 import ru.earl.models.userDetails.UserDetails
 import ru.earl.models.users.User
+import java.text.DateFormat
 import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.HashMap
 
 class ChatController {
 
@@ -78,6 +79,9 @@ class ChatController {
         val message = Json.decodeFromString<MessageReceive>(messageJson)
         val userIds = RoomsUsers.fetchUsersIdsInRoom(message.roomId)
         val userNames = mutableListOf<String>()
+        val currentDate = Date()
+        val dateFormat: DateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
+        val dateText = dateFormat.format(currentDate)
         for (id in userIds) { userNames.add(User.fetchUserById(id)?.username ?: "") }
         val messageEntity = RoomsMessagesDto(
             message.messageId,
@@ -85,7 +89,7 @@ class ChatController {
             message.authorId,
             message.timestamp,
             message.messageText,
-            message.messageDate,
+            dateText,
             message.read
         )
         val updatableMessage = LastMessageForUpdate(
@@ -112,22 +116,46 @@ class ChatController {
                 }
             }
         }
-        roomObserversClients.values.forEach { observer ->
-            val observerUsername = User.fetchUserById(observer.userId)?.username
-            if (messagingClients.containsKey(observerUsername)) {
-                updatableMessage.read = MSG_READ_KEY
-                val encodedMessageForUpdate = Json.encodeToString(updatableMessage)
-                observer.socket.send(encodedMessageForUpdate)
-            } else {
-                updatableMessage.read = MSG_UNREAD_KEY
-                val encodedMessageForUpdate = Json.encodeToString(updatableMessage)
-                observer.socket.send(encodedMessageForUpdate)
-            }
+        val authorId = message.authorId
+        val contactId = RoomsUsers.fetchUsersIdsInRoom(message.roomId).find { it != authorId }
+        val roomOccupancy = RoomOccupancy.checkRoomOccupancy(updatableMessage.roomId)
+        if (roomOccupancy == 2) {
+            updatableMessage.read = MSG_READ_KEY
+            val encodedMessageForUpdate = Json.encodeToString(updatableMessage)
+            println("updatable message read sent")
+            roomObserversClients.values.find { it.userId == authorId }?.socket?.send(Frame.Text(encodedMessageForUpdate))
+            roomObserversClients.values.find { it.userId == contactId }?.socket?.send(Frame.Text(encodedMessageForUpdate))
+//            observer.socket.send(encodedMessageForUpdate)
+        } else if (roomOccupancy != 2) {
+            updatableMessage.read = MSG_UNREAD_KEY
+            Room.increaseRoomUnreadMessagesCount(message.roomId)
+            Room.updateLastMessageReadStateToUnread(message.roomId)
+            val encodedMessageForUpdate = Json.encodeToString(updatableMessage)
+            println("updatable message unread sent")
+            roomObserversClients.values.find { it.userId == authorId }?.socket?.send(Frame.Text(encodedMessageForUpdate))
+            roomObserversClients.values.find { it.userId == contactId }?.socket?.send(Frame.Text(encodedMessageForUpdate))
+//            observer.socket.send(encodedMessageForUpdate)
         }
-    }
 
-    suspend fun fetchUnreadMessagesInRoom(call: ApplicationCall) {
-        val userId = authenticate(call)
+//        roomObserversClients.values.forEach { observer ->
+//            val observerUsername = User.fetchUserById(observer.userId)?.username
+//            val messagingClient = messagingClients[observerUsername]
+////            if (messagingClient != null && messagingClient.roomId == updatableMessage.roomId) {
+//            if (RoomOccupancy.checkRoomOccupancy(updatableMessage.roomId) == 2) {
+//                updatableMessage.read = MSG_READ_KEY
+////                updatableMessage.read = MSG_UNREAD_KEY
+//                val encodedMessageForUpdate = Json.encodeToString(updatableMessage)
+//                println("updatable message read sent")
+//                observer.socket.send(encodedMessageForUpdate)
+//            } else {
+//                updatableMessage.read = MSG_UNREAD_KEY
+//                Room.increaseRoomUnreadMessagesCount(message.roomId)
+//                val encodedMessageForUpdate = Json.encodeToString(updatableMessage)
+//                println("updatable message unread sent")
+//                Room.updateLastMessageReadStateToUnread(message.roomId)
+//                observer.socket.send(encodedMessageForUpdate)
+//            }
+//        }
     }
 
     suspend fun markMessagesAsRead(call: ApplicationCall) {
@@ -142,7 +170,26 @@ class ChatController {
                 }
             }
         }
+        Room.clearRoomUnreadMessagesCounter(roomId)
         RoomsMessages.markAsRead(roomId)
+        call.respond(HttpStatusCode.OK)
+    }
+
+    suspend fun updateLastMsgReadState(call: ApplicationCall) {
+        authenticate(call)
+        val id = call.receive<RoomTokenReceive>().roomId
+        Room.updateLastMessageReadStateToRead(id)
+        call.respond(HttpStatusCode.OK)
+    }
+
+    suspend fun markAuthoredMessagesAsRead(call: ApplicationCall) {
+        authenticate(call)
+        val receive = call.receive<MarkAuthoredMessageAsReadRequest>()
+        val response = RoomIdResponse(receive.roomId)
+        val jsonResponse = Json.encodeToString(response)
+        val authorId = User.fetchUserByUsername(receive.authorName)?.userId
+        val author = roomObserversClients.values.find { it.userId == authorId }
+        author?.socket?.send(Frame.Text(jsonResponse))
         call.respond(HttpStatusCode.OK)
     }
 
@@ -176,13 +223,15 @@ class ChatController {
             newRoomReceiveRemote.contact,
             newRoomReceiveRemote.lastMessage,
             newRoomReceiveRemote.lastMessageAuthor,
-            DEFAULT_DELETABLE_ROOM_VALUE
+            DEFAULT_DELETABLE_ROOM_VALUE,
+            FIRST_UNREAD_MSG_IN_ROOM,
+            0
         )
         val contactId = User.fetchUserByUsername(newRoomReceiveRemote.contact)?.userId
+        RoomOccupancy.initNewRoomOccupancy(newRoomReceiveRemote.roomId)
         RoomsUsers.insertUserForRoom(newRoomReceiveRemote.roomId, userId)
         RoomsUsers.insertUserForRoom(newRoomReceiveRemote.roomId, contactId!!)
         Room.insertRoom(newRoom)
-        RoomOccupancy.initNewRoomOccupancy(newRoomReceiveRemote.roomId)
         sendNewRoomToContacts(userId, newRoom)
     }
 
@@ -194,7 +243,9 @@ class ChatController {
             title = newRoom.contact_name,
             newRoom.last_message,
             newRoom.last_message_author,
-            newRoom.deletable.toBoolean()
+            newRoom.deletable.toBoolean(),
+            FIRST_UNREAD_MSG_IN_ROOM,
+            MSG_UNREAD_KEY
         )
         val contactRoomResponse = RoomResponse(
             newRoom.roomId,
@@ -202,7 +253,9 @@ class ChatController {
             title = newRoom.author_name,
             newRoom.last_message,
             newRoom.last_message_author,
-            newRoom.deletable.toBoolean()
+            newRoom.deletable.toBoolean(),
+            FIRST_UNREAD_MSG_IN_ROOM,
+            MSG_UNREAD_KEY
         )
         try {
             val jsonAuthorRoom = Json.encodeToString(authorRoomResponse)
@@ -243,7 +296,9 @@ class ChatController {
                             room.author_name,
                             room.last_message,
                             room.last_message_author,
-                            room.deletable.toBoolean()
+                            room.deletable.toBoolean(),
+                            room.unreadMsgCount,
+                            room.lastMsgRead
                         )
                         readyRoomsList.add(roomResponse)
                     } else {
@@ -254,7 +309,9 @@ class ChatController {
                             room?.contact_name ?: "",
                             room?.last_message ?: "",
                             room?.last_message_author ?: "",
-                            room?.deletable.toBoolean()
+                            room?.deletable.toBoolean(),
+                            room?.unreadMsgCount ?: 0,
+                            room?.lastMsgRead ?: 0
                         )
                         readyRoomsList.add(roomResponse)
                     }
@@ -309,6 +366,7 @@ class ChatController {
         private const val DEFAULT_DELETABLE_ROOM_VALUE = "true"
         private const val MSG_READ_KEY = 1
         private const val MSG_UNREAD_KEY = 0
+        private const val FIRST_UNREAD_MSG_IN_ROOM = 0
     }
 }
 
@@ -318,12 +376,4 @@ class ChatController {
 
 при выгрузке данных с базы другими юзерами, сравниваем время последней аутентификации и время последнего разрыва соединения
 если первое больше, то юзер в сети, если нет, но показываем время выхода
- */
-
-/*
-юзер отсылает сообщение, которое по дефолту unread
-на сервере происходит проверка, есть ли контакт, которому адресовано message, в messaging clients, и если есть, ему парситься новое прочитанное сообщение,
-а если нет - отсылается unread
-юзер получает unread сообщение, при получении которого обновляется счетчик для каждой комнаты
-при подключении к комнате, счетчик обнуляется, recycler скроллится к первому непрочитанному сообщению
  */

@@ -9,7 +9,9 @@ data class RoomResponse(
     val title: String,
     val lastMessage: String,
     val lastMessageAuthor: String,
-    val deletable: Boolean
+    val deletable: Boolean,
+    val unreadMsgCounter: Int,
+    val lastMsgRead: Int
 )
 
 @Serializable
@@ -27,8 +29,9 @@ data class LastMessageForUpdate(
     var read: Int
 )
 
-data class TestResponse(
-    val valueFirst: String
+@Serializable
+data class RoomIdResponse(
+    val id: String
 )
 
 @Serializable
