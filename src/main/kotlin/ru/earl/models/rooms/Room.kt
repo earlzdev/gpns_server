@@ -15,6 +15,8 @@ object Room : Table("rooms") {
     private val deletable = Room.varchar("deletable", 10)
     private val unreadMsgCount = Room.integer("unreadMsgCount")
     private val lastMsgRead = Room.integer("lastMsgRead")
+    private val contactOnline = Room.integer("contactOnline")
+    private val contactLastAuth = Room.varchar("contactLastAuth", 150)
 
     fun insertRoom(room: RoomDto) {
         try {
@@ -28,6 +30,9 @@ object Room : Table("rooms") {
                     it[lastMessageAuthor] = room.last_message_author
                     it[deletable] = room.deletable
                     it[unreadMsgCount] = room.unreadMsgCount
+                    it[lastMsgRead] = room.isLastMsgRead
+                    it[contactOnline] = room.contactOnline
+                    it[contactLastAuth] = room.contactLastAuth
                 }
             }
         } catch (e: Exception) {
@@ -48,7 +53,9 @@ object Room : Table("rooms") {
                     resultRow[lastMessageAuthor],
                     resultRow[deletable],
                     resultRow[unreadMsgCount],
-                    resultRow[lastMsgRead]
+                    resultRow[lastMsgRead],
+                    resultRow[contactOnline],
+                    resultRow[contactLastAuth]
                 )
             }
         } catch (e: Exception) {
@@ -126,6 +133,30 @@ object Room : Table("rooms") {
             }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    fun fetchAllRoomsIdsWithUser(username: String) : List<String> {
+        return try {
+            transaction {
+                val resultRow = Room.select { author_name eq username }.toList()
+                val resultRowForContact = Room.select { contact_name eq username }.toList()
+                val readyList = mutableListOf<String>()
+                for (i in resultRow.indices) {
+                    readyList.add(
+                        resultRow[i][roomId]
+                    )
+                }
+                for (i in resultRowForContact.indices) {
+                    readyList.add(
+                        resultRowForContact[i][roomId]
+                    )
+                }
+                readyList
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
         }
     }
 }

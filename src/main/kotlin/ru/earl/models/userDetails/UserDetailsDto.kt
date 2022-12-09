@@ -8,5 +8,6 @@ data class UserDetailsDto(
     @SerialName("userId") val userId: String,
     @SerialName("image") val image: String,
     @SerialName("username") val username: String,
-    @SerialName("online") val online: String,
+    @SerialName("online") val online: Int,
+    @SerialName("lastAuth") val lastAuth: String
 )
