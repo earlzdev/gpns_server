@@ -159,4 +159,34 @@ object Room : Table("rooms") {
             emptyList()
         }
     }
+
+    fun setUserOnline(username: String) {
+        try {
+            transaction {
+                Room.update({ contact_name eq username }) {
+                    it[contactOnline] = 1
+                }
+                Room.update({ author_name eq username }) {
+                    it[contactOnline] = 1
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun setUserOffline(username: String) {
+        try {
+            transaction {
+                Room.update({ contact_name eq username }) {
+                    it[contactOnline] = 0
+                }
+                Room.update({ author_name eq username }) {
+                    it[contactOnline] = 0
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }

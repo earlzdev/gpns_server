@@ -68,9 +68,6 @@ class ChatController {
         if (userId != null) {
             when(parsedAction.action) {
                 ADD_ROOM_KEY -> addRoomToDb(userId, parsedAction.value)
-//                JOIN_ROOM_KEY -> joinRoom(parsedAction.value, userId)
-//                SEND_MESSAGE_KEY -> sendMessage(parsedAction.value)
-//                LEAVE_ROOM_KEY -> leaveRoom(parsedAction.value)
             }
         }
     }
@@ -122,7 +119,6 @@ class ChatController {
         if (roomOccupancy == 2) {
             updatableMessage.read = MSG_READ_KEY
             val encodedMessageForUpdate = Json.encodeToString(updatableMessage)
-            println("updatable message read sent")
             roomObserversClients.values.find { it.userId == authorId }?.socket?.send(Frame.Text(encodedMessageForUpdate))
             roomObserversClients.values.find { it.userId == contactId }?.socket?.send(Frame.Text(encodedMessageForUpdate))
         } else if (roomOccupancy != 2) {
@@ -130,7 +126,6 @@ class ChatController {
             Room.increaseRoomUnreadMessagesCount(message.roomId)
             Room.updateLastMessageReadStateToUnread(message.roomId)
             val encodedMessageForUpdate = Json.encodeToString(updatableMessage)
-            println("updatable message unread sent")
             roomObserversClients.values.find { it.userId == authorId }?.socket?.send(Frame.Text(encodedMessageForUpdate))
             roomObserversClients.values.find { it.userId == contactId }?.socket?.send(Frame.Text(encodedMessageForUpdate))
         }
@@ -279,12 +274,16 @@ class ChatController {
             val roomsIdsList = RoomsUsers.fetchRoomsIdsForUser(userId)
             val readyRoomsList = mutableListOf<RoomResponse>()
             val username = User.fetchUserById(userId)?.username
+            println("fethced username -> $username")
             if (roomsIdsList.isEmpty()) {
                 call.respond(HttpStatusCode.OK, "No rooms")
             } else {
                 for (i in roomsIdsList.indices) {
                     val room = Room.fetchRoomByRoomId(roomsIdsList[i])
                     if (room?.contact_name == username && room != null) {
+                        val contactName = room.author_name
+                        val contactId = User.fetchUserByUsername(contactName)?.userId
+                        val isOnline = UserDetails.checkUserOnline(contactId!!)
                         val roomResponse = RoomResponse(
                             ADD_ROOM_KEY,
                             room.roomId,
@@ -295,24 +294,27 @@ class ChatController {
                             room.deletable.toBoolean(),
                             room.unreadMsgCount,
                             room.isLastMsgRead,
-                            room.contactOnline,
+                            isOnline,
                             room.contactLastAuth
                         )
                         readyRoomsList.add(roomResponse)
                     } else {
                         val image = UserDetails.fetchUserDetailsById(userId)?.image
+                        val contactName = room?.contact_name
+                        val contactId = User.fetchUserByUsername(contactName!!)?.userId
+                        val isOnline = UserDetails.checkUserOnline(contactId!!)
                         val roomResponse = RoomResponse(
                             ADD_ROOM_KEY,
-                            room?.roomId ?: "",
+                            room.roomId ,
                             image ?: "",
-                            room?.contact_name ?: "",
-                            room?.last_message ?: "",
-                            room?.last_message_author ?: "",
-                            room?.deletable.toBoolean(),
-                            room?.unreadMsgCount ?: 0,
-                            room?.isLastMsgRead ?: 0,
-                            room?.contactOnline ?: 0,
-                            room?.contactLastAuth ?: ""
+                            room.contact_name ,
+                            room.last_message,
+                            room.last_message_author,
+                            room.deletable.toBoolean(),
+                            room.unreadMsgCount,
+                            room.isLastMsgRead,
+                            isOnline,
+                            room.contactLastAuth
                         )
                         readyRoomsList.add(roomResponse)
                     }
@@ -379,8 +381,10 @@ class ChatController {
         val currentDate = Date()
         val dateFormat: DateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
         val dateText = dateFormat.format(currentDate)
+        val username = User.fetchUserById(userId)?.username
         UsersOnline.setUserOffline(userId, dateText)
         UserDetails.setUserOffline(userId, dateText)
+        Room.setUserOffline(username!!)
         // send by socket
         val rooms = RoomsUsers.fetchRoomsIdsForUser(userId)
         for (room in rooms) {
@@ -392,7 +396,6 @@ class ChatController {
                 it.socket.send(Frame.Text(response))
             }
         }
-        val username = User.fetchUserById(userId)?.username
         val roomsIdsListWithUser = Room.fetchAllRoomsIdsWithUser(username ?: "")
         for (roomId in roomsIdsListWithUser) {
             RoomsUsers.fetchUsersIdsInRoom(roomId).forEach {
@@ -413,8 +416,10 @@ class ChatController {
         val currentDate = Date()
         val dateFormat: DateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
         val dateText = dateFormat.format(currentDate)
+        val username = User.fetchUserById(userId)?.username
         UsersOnline.setUserOnline(userId)
         UserDetails.setUserOnline(userId)
+        Room.setUserOnline(username!!)
         // send by socket
         val rooms = RoomsUsers.fetchRoomsIdsForUser(userId)
         for (room in rooms) {
@@ -426,7 +431,6 @@ class ChatController {
                 it.socket.send(Frame.Text(response))
             }
         }
-        val username = User.fetchUserById(userId)?.username
         val roomsIdsListWithUser = Room.fetchAllRoomsIdsWithUser(username ?: "")
         for (roomId in roomsIdsListWithUser) {
             RoomsUsers.fetchUsersIdsInRoom(roomId).forEach {
