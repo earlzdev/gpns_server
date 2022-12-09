@@ -22,7 +22,6 @@ import ru.earl.models.usersOnline.UsersOnline
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.HashMap
 
 class ChatController {
 
@@ -257,6 +256,15 @@ class ChatController {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    suspend fun sendTypingMessageRequest(call: ApplicationCall) {
+        authenticate(call)
+        val response = call.receive<TypingMessageDto>()
+        messagingClients.values.find { it.roomId == response.roomId && it.username != response.username }.apply {
+            this?.socket?.send(Frame.Text(Json.encodeToString(response)))
+        }
+        call.respond(HttpStatusCode.OK)
     }
 
     suspend fun fetchUserInfo(call: ApplicationCall) {

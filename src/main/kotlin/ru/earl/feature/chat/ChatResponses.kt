@@ -60,3 +60,8 @@ data class SetUserOnlineInMessaging(
     val online: Int,
     val lastAuth: String
 )
+
+@Serializable
+data class UpdateTypingState(
+    val isTyping: String
+)

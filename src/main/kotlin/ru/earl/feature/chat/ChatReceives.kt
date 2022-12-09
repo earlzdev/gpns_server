@@ -48,3 +48,10 @@ data class MarkAuthoredMessageAsReadRequest(
     val roomId: String,
     val authorName: String
 )
+
+@Serializable
+data class TypingMessageDto(
+    val roomId: String,
+    val username: String,
+    val typing: Int
+)
