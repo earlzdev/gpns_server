@@ -18,10 +18,10 @@ import ru.earl.models.roomsMessages.RoomsMessagesDto
 import ru.earl.models.roomsUsers.RoomsUsers
 import ru.earl.models.userDetails.UserDetails
 import ru.earl.models.users.User
+import ru.earl.models.usersOnline.UsersOnline
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.HashMap
 
 class ChatController {
 
@@ -125,7 +125,6 @@ class ChatController {
             println("updatable message read sent")
             roomObserversClients.values.find { it.userId == authorId }?.socket?.send(Frame.Text(encodedMessageForUpdate))
             roomObserversClients.values.find { it.userId == contactId }?.socket?.send(Frame.Text(encodedMessageForUpdate))
-//            observer.socket.send(encodedMessageForUpdate)
         } else if (roomOccupancy != 2) {
             updatableMessage.read = MSG_UNREAD_KEY
             Room.increaseRoomUnreadMessagesCount(message.roomId)
@@ -134,28 +133,7 @@ class ChatController {
             println("updatable message unread sent")
             roomObserversClients.values.find { it.userId == authorId }?.socket?.send(Frame.Text(encodedMessageForUpdate))
             roomObserversClients.values.find { it.userId == contactId }?.socket?.send(Frame.Text(encodedMessageForUpdate))
-//            observer.socket.send(encodedMessageForUpdate)
         }
-
-//        roomObserversClients.values.forEach { observer ->
-//            val observerUsername = User.fetchUserById(observer.userId)?.username
-//            val messagingClient = messagingClients[observerUsername]
-////            if (messagingClient != null && messagingClient.roomId == updatableMessage.roomId) {
-//            if (RoomOccupancy.checkRoomOccupancy(updatableMessage.roomId) == 2) {
-//                updatableMessage.read = MSG_READ_KEY
-////                updatableMessage.read = MSG_UNREAD_KEY
-//                val encodedMessageForUpdate = Json.encodeToString(updatableMessage)
-//                println("updatable message read sent")
-//                observer.socket.send(encodedMessageForUpdate)
-//            } else {
-//                updatableMessage.read = MSG_UNREAD_KEY
-//                Room.increaseRoomUnreadMessagesCount(message.roomId)
-//                val encodedMessageForUpdate = Json.encodeToString(updatableMessage)
-//                println("updatable message unread sent")
-//                Room.updateLastMessageReadStateToUnread(message.roomId)
-//                observer.socket.send(encodedMessageForUpdate)
-//            }
-//        }
     }
 
     suspend fun markMessagesAsRead(call: ApplicationCall) {
@@ -225,7 +203,9 @@ class ChatController {
             newRoomReceiveRemote.lastMessageAuthor,
             DEFAULT_DELETABLE_ROOM_VALUE,
             FIRST_UNREAD_MSG_IN_ROOM,
-            0
+            0,
+            newRoomReceiveRemote.contactIsOnline,
+            newRoomReceiveRemote.contactLastAuth
         )
         val contactId = User.fetchUserByUsername(newRoomReceiveRemote.contact)?.userId
         RoomOccupancy.initNewRoomOccupancy(newRoomReceiveRemote.roomId)
@@ -238,6 +218,7 @@ class ChatController {
     private suspend fun sendNewRoomToContacts(userId: String, newRoom: RoomDto) {
         val contactId = User.fetchUserByUsername(newRoom.contact_name)?.userId
         val authorRoomResponse = RoomResponse(
+            ADD_ROOM_KEY,
             newRoom.roomId,
             newRoom.image,
             title = newRoom.contact_name,
@@ -245,9 +226,12 @@ class ChatController {
             newRoom.last_message_author,
             newRoom.deletable.toBoolean(),
             FIRST_UNREAD_MSG_IN_ROOM,
-            MSG_UNREAD_KEY
+            MSG_UNREAD_KEY,
+            newRoom.contactOnline,
+            newRoom.contactLastAuth
         )
         val contactRoomResponse = RoomResponse(
+            ADD_ROOM_KEY,
             newRoom.roomId,
             newRoom.image,
             title = newRoom.author_name,
@@ -255,7 +239,9 @@ class ChatController {
             newRoom.last_message_author,
             newRoom.deletable.toBoolean(),
             FIRST_UNREAD_MSG_IN_ROOM,
-            MSG_UNREAD_KEY
+            MSG_UNREAD_KEY,
+            newRoom.contactOnline,
+            newRoom.contactLastAuth
         )
         try {
             val jsonAuthorRoom = Json.encodeToString(authorRoomResponse)
@@ -270,6 +256,15 @@ class ChatController {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    suspend fun sendTypingMessageRequest(call: ApplicationCall) {
+        authenticate(call)
+        val response = call.receive<TypingMessageDto>()
+        messagingClients.values.find { it.roomId == response.roomId && it.username != response.username }.apply {
+            this?.socket?.send(Frame.Text(Json.encodeToString(response)))
+        }
+        call.respond(HttpStatusCode.OK)
     }
 
     suspend fun fetchUserInfo(call: ApplicationCall) {
@@ -291,6 +286,7 @@ class ChatController {
                     val room = Room.fetchRoomByRoomId(roomsIdsList[i])
                     if (room?.contact_name == username && room != null) {
                         val roomResponse = RoomResponse(
+                            ADD_ROOM_KEY,
                             room.roomId,
                             room.image,
                             room.author_name,
@@ -298,12 +294,15 @@ class ChatController {
                             room.last_message_author,
                             room.deletable.toBoolean(),
                             room.unreadMsgCount,
-                            room.lastMsgRead
+                            room.isLastMsgRead,
+                            room.contactOnline,
+                            room.contactLastAuth
                         )
                         readyRoomsList.add(roomResponse)
                     } else {
                         val image = UserDetails.fetchUserDetailsById(userId)?.image
                         val roomResponse = RoomResponse(
+                            ADD_ROOM_KEY,
                             room?.roomId ?: "",
                             image ?: "",
                             room?.contact_name ?: "",
@@ -311,7 +310,9 @@ class ChatController {
                             room?.last_message_author ?: "",
                             room?.deletable.toBoolean(),
                             room?.unreadMsgCount ?: 0,
-                            room?.lastMsgRead ?: 0
+                            room?.isLastMsgRead ?: 0,
+                            room?.contactOnline ?: 0,
+                            room?.contactLastAuth ?: ""
                         )
                         readyRoomsList.add(roomResponse)
                     }
@@ -325,8 +326,26 @@ class ChatController {
     }
 
     suspend fun deleteRoom(call: ApplicationCall) {
-        authenticate(call)
+        val userId = authenticate(call)
         val roomId = call.receive<RoomTokenReceive>().roomId
+        val contactId = RoomsUsers.fetchUsersIdsInRoom(roomId).find { it != userId }
+        val deletedRoom = Room.fetchRoomByRoomId(roomId)
+        val response = RoomResponse(
+            REMOVE_ROOM_KEY,
+            deletedRoom?.roomId ?: "",
+            deletedRoom?.image ?: "",
+            deletedRoom?.contact_name ?: "",
+            deletedRoom?.last_message ?: "",
+            deletedRoom?.last_message_author ?: "",
+            deletedRoom?.deletable.toBoolean(),
+            deletedRoom?.unreadMsgCount ?: 0,
+            deletedRoom?.isLastMsgRead ?: 0,
+            deletedRoom?.contactOnline ?: 0,
+            deletedRoom?.contactLastAuth ?: ""
+        )
+        val jsonResponse = Json.encodeToString(response)
+        roomObserversClients.values.find { it.userId == userId }?.socket?.send(Frame.Text(jsonResponse))
+        roomObserversClients.values.find { it.userId == contactId }?.socket?.send(Frame.Text(jsonResponse))
         Room.removeRoom(roomId)
         RoomsUsers.deleteUsersInRoom(roomId)
         RoomsMessages.deleteAllMessagesInRoom(roomId)
@@ -334,17 +353,93 @@ class ChatController {
         call.respond(HttpStatusCode.OK)
     }
 
-    fun authenticate(call: ApplicationCall): String? {
+    suspend fun authenticate(call: ApplicationCall): String? {
         val principal = call.principal<JWTPrincipal>()
-        return principal?.getClaim(USER_ID, String::class)
+        val userId = principal?.getClaim(USER_ID, String::class)
+        val checkOnline = UsersOnline.checkOnline(userId ?: "")
+        if (!checkOnline) {
+            UsersOnline.setUserOnline(userId ?: "")
+            UserDetails.setUserOnline(userId ?: "")
+            setUserOnline(userId ?: "")
+        }
+        return userId
     }
 
     suspend fun tryChatDisconnect(userId: String) {
         roomObserversClients[userId]?.socket?.close()
         if (roomObserversClients.containsKey(userId)) {
             roomObserversClients.remove(userId)
+            setUserOffline(userId)
             println("DISCONNECTED FROM ROOMS OBSERVERS $userId")
             println("observes -> $roomObserversClients")
+        }
+    }
+
+    private suspend fun setUserOffline(userId: String) {
+        val currentDate = Date()
+        val dateFormat: DateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
+        val dateText = dateFormat.format(currentDate)
+        UsersOnline.setUserOffline(userId, dateText)
+        UserDetails.setUserOffline(userId, dateText)
+        // send by socket
+        val rooms = RoomsUsers.fetchRoomsIdsForUser(userId)
+        for (room in rooms) {
+            messagingClients.values.filter { it.roomId == room }.forEach {
+                val response = Json.encodeToString(SetUserOnlineInMessaging(
+                    USER_OFFLINE,
+                    dateText
+                ))
+                it.socket.send(Frame.Text(response))
+            }
+        }
+        val username = User.fetchUserById(userId)?.username
+        val roomsIdsListWithUser = Room.fetchAllRoomsIdsWithUser(username ?: "")
+        for (roomId in roomsIdsListWithUser) {
+            RoomsUsers.fetchUsersIdsInRoom(roomId).forEach {
+                if (roomObserversClients.containsKey(it)) {
+                    val response = Json.encodeToString(SetUserOnlineInRoom(
+                        USER_OFFLINE,
+                        username ?: "",
+                        roomId,
+                        dateText
+                    ))
+                    roomObserversClients[it]?.socket?.send(Frame.Text(response))
+                }
+            }
+        }
+    }
+
+    private suspend fun setUserOnline(userId: String) {
+        val currentDate = Date()
+        val dateFormat: DateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
+        val dateText = dateFormat.format(currentDate)
+        UsersOnline.setUserOnline(userId)
+        UserDetails.setUserOnline(userId)
+        // send by socket
+        val rooms = RoomsUsers.fetchRoomsIdsForUser(userId)
+        for (room in rooms) {
+            messagingClients.values.filter { it.roomId == room }.forEach {
+                val response = Json.encodeToString(SetUserOnlineInMessaging(
+                    USER_ONLINE,
+                    it.username
+                ))
+                it.socket.send(Frame.Text(response))
+            }
+        }
+        val username = User.fetchUserById(userId)?.username
+        val roomsIdsListWithUser = Room.fetchAllRoomsIdsWithUser(username ?: "")
+        for (roomId in roomsIdsListWithUser) {
+            RoomsUsers.fetchUsersIdsInRoom(roomId).forEach {
+                if (roomObserversClients.containsKey(it)) {
+                    val response = Json.encodeToString(SetUserOnlineInRoom(
+                        USER_ONLINE,
+                        username ?: "",
+                        roomId,
+                        dateText
+                    ))
+                    roomObserversClients[it]?.socket?.send(Frame.Text(response))
+                }
+            }
         }
     }
 
@@ -362,11 +457,14 @@ class ChatController {
     companion object {
 
         private const val ADD_ROOM_KEY = "addRoom"
+        private const val REMOVE_ROOM_KEY = "remove"
         private const val USER_ID = "userId"
         private const val DEFAULT_DELETABLE_ROOM_VALUE = "true"
         private const val MSG_READ_KEY = 1
         private const val MSG_UNREAD_KEY = 0
         private const val FIRST_UNREAD_MSG_IN_ROOM = 0
+        private const val USER_OFFLINE = 0
+        private const val USER_ONLINE = 1
     }
 }
 

@@ -10,7 +10,9 @@ data class NewRoomReceiveRemote(
     val author: String,
     val contact: String,
     val lastMessage: String,
-    val lastMessageAuthor: String
+    val lastMessageAuthor: String,
+    val contactIsOnline: Int,
+    val contactLastAuth: String
 )
 
 @Serializable
@@ -45,4 +47,11 @@ data class MessageId(
 data class MarkAuthoredMessageAsReadRequest(
     val roomId: String,
     val authorName: String
+)
+
+@Serializable
+data class TypingMessageDto(
+    val roomId: String,
+    val username: String,
+    val typing: Int
 )

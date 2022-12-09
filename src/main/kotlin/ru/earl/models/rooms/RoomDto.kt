@@ -13,5 +13,7 @@ data class RoomDto(
     @SerialName("last_message_author") val last_message_author: String,
     @SerialName("deletable") val deletable: String,
     @SerialName("unreadMsgCount") val unreadMsgCount: Int,
-    @SerialName("lastMsgRead: Int") val lastMsgRead: Int,
+    @SerialName("lastMsgRead") val isLastMsgRead: Int,
+    @SerialName("contactOnline") val contactOnline: Int,
+    @SerialName("contactLastAuth") val contactLastAuth: String,
 )

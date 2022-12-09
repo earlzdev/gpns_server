@@ -69,6 +69,9 @@ fun Application.configureChatRouting() {
             post("/updateLastMsgReadState") {
                 chatController.updateLastMsgReadState(call)
             }
+            post("/typingMessageRequest") {
+                chatController.sendTypingMessageRequest(call)
+            }
         }
     }
 }

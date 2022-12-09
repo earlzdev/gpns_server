@@ -10,11 +10,15 @@ import ru.earl.models.userDetails.UserDetails
 import ru.earl.models.userDetails.UserDetailsDto
 import ru.earl.models.users.User
 import ru.earl.models.users.UserDto
+import ru.earl.models.usersOnline.UsersOnline
+import ru.earl.models.usersOnline.UsersOnlineDto
 import ru.earl.security.hashing.HashingService
 import ru.earl.security.hashing.SaltedHash
 import ru.earl.security.token.TokenClaim
 import ru.earl.security.token.TokenConfig
 import ru.earl.security.token.TokenService
+import java.text.DateFormat
+import java.text.SimpleDateFormat
 import java.util.*
 
 class AuthController(
@@ -25,6 +29,9 @@ class AuthController(
 
     suspend fun register(call: ApplicationCall) {
         val request = call.receive<RegisterRequest>()
+        val currentDate = Date()
+        val dateFormat: DateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
+        val dateText = dateFormat.format(currentDate)
         try {
             val userId = UUID.nameUUIDFromBytes(request.email.toByteArray()).toString()
             val saltedHash = hashingService.generateSaltedHash(request.password)
@@ -39,10 +46,17 @@ class AuthController(
                 userId,
                 "",
                 request.username,
-                ""
+                1,
+                dateText
             )
             User.insert(user)
             UserDetails.insertUserDetails(userDetails)
+            UsersOnline.insertNewUser(UsersOnlineDto(
+                userId,
+                dateText,
+                1
+            ))
+            UsersOnline.setUserOnline(userId)
             call.respond(HttpStatusCode.OK, "success")
         } catch (e: Exception) {
             e.printStackTrace()
@@ -54,11 +68,12 @@ class AuthController(
         val request = call.receive<LoginRequest>()
         println("request login $request")
         val user = User.fetchUserByEmail(request.email)
+        UsersOnline.setUserOnline(user?.userId!!)
         println("login fetchuser -> $user")
         val isValidPassword = hashingService.verify(
             value = request.password,
             saltedHash = SaltedHash(
-                hash = user?.password!!,
+                hash = user.password,
                 salt = user.userSalt
             )
         )
