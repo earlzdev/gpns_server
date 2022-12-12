@@ -16,13 +16,6 @@ data class NewRoomReceiveRemote(
 )
 
 @Serializable
-data class ChatSocketActionReceiveRemote(
-    val action: String,
-    val userId: String,
-    val value: String
-)
-
-@Serializable
 data class MessageReceive(
     val messageId: String,
     val roomId: String,
@@ -36,11 +29,6 @@ data class MessageReceive(
 @Serializable
 data class RoomTokenReceive(
     val roomId: String
-)
-
-@Serializable
-data class MessageId(
-    val messageId: String
 )
 
 @Serializable

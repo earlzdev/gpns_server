@@ -6,31 +6,36 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.serialization.json.Json
 import ru.earl.models.users.User
 
 fun Application.configureChatRouting() {
-
-    val chatController = ChatController()
-
+    
+    val chatController = ChatController(
+        MessagingServiceImpl(),
+        WebSocketServiceImpl(),
+        MainServiceImpl(),
+        RoomsServiceImpl()
+    )
+    
     routing {
         authenticate {
             webSocket("/chat") {
-                chatController.initChatSocket(call, this)
+                chatController.initRoomsObservingSocket(call, this)
                 try {
                     incoming.consumeEach { frame ->
-                        if(frame is Frame.Text) {
-                            chatController.parseAction(frame.readText(), call)
+                        if (frame is Frame.Text) {
+
                         }
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
                 } finally {
-                    val userId = chatController.authenticate(call)
-                    chatController.tryChatDisconnect(userId!!)
+                    chatController.closeRoomsObservingSocket(call)
                 }
             }
             webSocket("/messaging") {
-                chatController.initMessaging(call, this)
+                chatController.initRoomMessagingSocket(call, this)
                 try {
                     incoming.consumeEach { frame ->
                         if (frame is Frame.Text) {
@@ -40,9 +45,7 @@ fun Application.configureChatRouting() {
                 } catch (e: Exception) {
                     e.printStackTrace()
                 } finally {
-                    val userId = chatController.authenticate(call)
-                    val username = User.fetchUserById(userId!!)?.username
-                    chatController.tryMessagingDisconnect(username!!)
+                    chatController.closeRoomMessagingSocket(call)
                 }
             }
             get("/fetchRooms") {
@@ -58,7 +61,7 @@ fun Application.configureChatRouting() {
                 chatController.fetchAllMessages(call)
             }
             post("/markAuthoredMessagesAsRead") {
-                chatController.markAuthoredMessagesAsRead(call)
+                chatController.markAuthoredMessageAsRead(call)
             }
             post("/deleteRoom") {
                 chatController.deleteRoom(call)
@@ -67,10 +70,13 @@ fun Application.configureChatRouting() {
                 chatController.markMessagesAsRead(call)
             }
             post("/updateLastMsgReadState") {
-                chatController.updateLastMsgReadState(call)
+                chatController.updateLastMessageReadState(call)
             }
             post("/typingMessageRequest") {
                 chatController.sendTypingMessageRequest(call)
+            }
+            post("/addRoom") {
+                chatController.addNewRoomToDb(call)
             }
         }
     }
