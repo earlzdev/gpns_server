@@ -74,6 +74,7 @@ object User : Table("users") {
                 )
             }
         } catch (e: Exception) {
+            println("exc -> $e")
             e.printStackTrace()
             null
         }

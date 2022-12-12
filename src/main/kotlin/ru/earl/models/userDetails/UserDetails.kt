@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import ru.earl.models.users.User
 
 object UserDetails : Table("users_details") {
 
@@ -93,6 +94,31 @@ object UserDetails : Table("users_details") {
             }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    fun checkUserOnline(user_id: String) : Int {
+        return try {
+            transaction {
+                val query = UserDetails.select { userId eq user_id }.single()
+                val user = UserDetailsDto(
+                    query[userId],
+                    query[image],
+                    query[username],
+                    query[online],
+                    query[lastAuth]
+                )
+                println("user in room -> $user")
+                if (user.online == 1) {
+                    return@transaction  1
+                } else {
+                    return@transaction 0
+                }
+            }
+        } catch (e: Exception) {
+            println("exception -> $e")
+            e.printStackTrace()
+            0
         }
     }
 }
