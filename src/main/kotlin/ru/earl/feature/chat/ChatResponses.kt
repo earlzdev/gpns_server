@@ -4,7 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class RoomResponse(
-    val action: String,
     val roomId: String,
     val image: String,
     val title: String,
@@ -15,11 +14,6 @@ data class RoomResponse(
     val lastMsgRead: Int,
     val contactIsOnline: Int,
     val contactLastAuth: String
-)
-
-@Serializable
-data class NewRoomTokenResponseRemote (
-    val token: String
 )
 
 @Serializable
@@ -43,11 +37,6 @@ data class MessageIdResponse(
 )
 
 @Serializable
-data class DeleteRoomResponse(
-    val roomId: String
-)
-
-@Serializable
 data class SetUserOnlineInRoom(
     val online: Int,
     val username: String,
@@ -59,9 +48,4 @@ data class SetUserOnlineInRoom(
 data class SetUserOnlineInMessaging(
     val online: Int,
     val lastAuth: String
-)
-
-@Serializable
-data class UpdateTypingState(
-    val isTyping: String
 )

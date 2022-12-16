@@ -1,4 +1,4 @@
-package ru.earl.feature.chat
+package ru.earl.feature.chat.rooms
 
 import io.ktor.websocket.*
 

@@ -1,4 +1,4 @@
-package ru.earl.feature.chat
+package ru.earl.feature.chat.rooms
 
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -8,6 +8,7 @@ import io.ktor.websocket.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import ru.earl.feature.chat.*
 import ru.earl.models.roomOccupancy.RoomOccupancy
 import ru.earl.models.rooms.Room
 import ru.earl.models.roomsMessages.RoomsMessages
@@ -55,11 +56,19 @@ class MessagingServiceImpl() : MessagingService, OnlineController() {
                     messageEntity.read = 1
                     RoomsMessages.markAsRead(receivedMessage.roomId)
                     val encodedMessage = Json.encodeToString(messageEntity)
-                    member.socket.send(Frame.Text(encodedMessage))
+                    val messageDto = SocketModelDto(
+                        SocketActions.NEW_MESSAGE.toString(),
+                        encodedMessage
+                    )
+                    member.socket.send(Frame.Text(Json.encodeToString(messageDto)))
                 } else {
                     messageEntity.read = 0
                     val encodedMessage = Json.encodeToString(messageEntity)
-                    member.socket.send(Frame.Text(encodedMessage))
+                    val messageDto = SocketModelDto(
+                        SocketActions.NEW_MESSAGE.toString(),
+                        encodedMessage
+                    )
+                    member.socket.send(Frame.Text(Json.encodeToString(messageDto)))
                 }
             }
         }
@@ -73,7 +82,11 @@ class MessagingServiceImpl() : MessagingService, OnlineController() {
             WebSocketConnectionHandler.messagingClients.values.forEach {
                 if (it.roomId == message.roomId) {
                     val jsonMessage = Json.encodeToString(MessageIdResponse(message.messageId))
-                    it.socket.send(Frame.Text(jsonMessage))
+                    val messageDto = SocketModelDto(
+                        SocketActions.MARK_MESSAGE_AS_READ_IN_CHAT.toString(),
+                        jsonMessage
+                    )
+                    it.socket.send(Frame.Text(Json.encodeToString(messageDto)))
                 }
             }
         }
@@ -89,7 +102,11 @@ class MessagingServiceImpl() : MessagingService, OnlineController() {
         val jsonResponse = Json.encodeToString(response)
         val authorId = User.fetchUserByUsername(receive.authorName)?.userId
         val author = WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == authorId }
-        author?.socket?.send(Frame.Text(jsonResponse))
+        val dtoModel = SocketModelDto(
+            SocketActions.UPDATE_LAST_MESSAGE_READ_STATE.toString(),
+            jsonResponse
+        )
+        author?.socket?.send(Frame.Text(Json.encodeToString(dtoModel)))
         call.respond(HttpStatusCode.OK)
     }
 
@@ -97,7 +114,11 @@ class MessagingServiceImpl() : MessagingService, OnlineController() {
         authenticate(call)
         val response = call.receive<TypingMessageDto>()
         WebSocketConnectionHandler.messagingClients.values.find { it.roomId == response.roomId && it.username != response.username }.apply {
-            this?.socket?.send(Frame.Text(Json.encodeToString(response)))
+            val responseDto = SocketModelDto(
+                SocketActions.UPDATE_USER_TYPING_MESSAGE_STATE.toString(),
+                Json.encodeToString(response)
+            )
+            this?.socket?.send(Frame.Text(Json.encodeToString(responseDto)))
         }
         call.respond(HttpStatusCode.OK)
     }
@@ -118,15 +139,23 @@ class MessagingServiceImpl() : MessagingService, OnlineController() {
         if (roomOccupancy == 2) {
             updatableMessage.read = MSG_READ_KEY
             val encodedMessageForUpdate = Json.encodeToString(updatableMessage)
-            WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == authorId }?.socket?.send(Frame.Text(encodedMessageForUpdate))
-            WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == contactId }?.socket?.send(Frame.Text(encodedMessageForUpdate))
+            val responseDto = SocketModelDto(
+                SocketActions.UPDATE_LAST_MESSAGE_IN_ROOM.toString(),
+                encodedMessageForUpdate
+            )
+            WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == authorId }?.socket?.send(Frame.Text(Json.encodeToString(responseDto)))
+            WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == contactId }?.socket?.send(Frame.Text(Json.encodeToString(responseDto)))
         } else if (roomOccupancy != 2) {
             updatableMessage.read = MSG_UNREAD_KEY
             Room.increaseRoomUnreadMessagesCount(receivedMessage.roomId)
             Room.updateLastMessageReadStateToUnread(receivedMessage.roomId)
             val encodedMessageForUpdate = Json.encodeToString(updatableMessage)
-            WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == authorId }?.socket?.send(Frame.Text(encodedMessageForUpdate))
-            WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == contactId }?.socket?.send(Frame.Text(encodedMessageForUpdate))
+            val responseDto = SocketModelDto(
+                SocketActions.UPDATE_LAST_MESSAGE_IN_ROOM.toString(),
+                encodedMessageForUpdate
+            )
+            WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == authorId }?.socket?.send(Frame.Text(Json.encodeToString(responseDto)))
+            WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == contactId }?.socket?.send(Frame.Text(Json.encodeToString(responseDto)))
         }
     }
 
