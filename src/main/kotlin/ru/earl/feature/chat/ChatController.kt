@@ -2,14 +2,18 @@ package ru.earl.feature.chat
 
 import io.ktor.server.application.*
 import io.ktor.websocket.*
+import ru.earl.feature.chat.groups.GroupService
+import ru.earl.feature.chat.groups.GroupServiceImpl
+import ru.earl.feature.chat.rooms.*
 import ru.earl.models.rooms.RoomDto
 
 class ChatController(
     private val messagingServiceImpl: MessagingServiceImpl,
     private val webSocketServiceImpl: WebSocketServiceImpl,
     private val mainServiceImpl: MainServiceImpl,
-    private val roomsServiceImpl: RoomsServiceImpl
-) : MessagingService, RoomsService, MainService, WebSocketsService {
+    private val roomsServiceImpl: RoomsServiceImpl,
+    private val groupsService: GroupServiceImpl
+) : MessagingService, RoomsService, MainService, WebSocketsService, GroupService {
 
     override suspend fun fetchUsersListForUser(call: ApplicationCall) {
         mainServiceImpl.fetchUsersListForUser(call)
@@ -81,5 +85,25 @@ class ChatController(
 
     override suspend fun closeRoomMessagingSocket(call: ApplicationCall) {
         webSocketServiceImpl.closeRoomMessagingSocket(call)
+    }
+
+    override suspend fun insertCommonGroup() {
+        groupsService.insertCommonGroup()
+    }
+
+    override suspend fun fetchCompanionGroup(call: ApplicationCall) {
+        groupsService.fetchCompanionGroup(call)
+    }
+
+    override suspend fun fetchCommonGroup(call: ApplicationCall) {
+        groupsService.fetchCommonGroup(call)
+    }
+
+    override suspend fun initGroupMessagingWebSocket(call: ApplicationCall, socket: WebSocketSession) {
+        webSocketServiceImpl.initGroupMessagingWebSocket(call, socket)
+    }
+
+    override suspend fun closeGroupWebSocketSession(call: ApplicationCall) {
+        webSocketServiceImpl.closeGroupWebSocketSession(call)
     }
 }

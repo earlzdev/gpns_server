@@ -42,24 +42,24 @@ open class OnlineController {
         val rooms = RoomsUsers.fetchRoomsIdsForUser(userId)
         for (room in rooms) {
             WebSocketConnectionHandler.messagingClients.values.filter { it.roomId == room }.forEach {
-                val response = Json.encodeToString(SetUserOnlineInMessaging(
-               USER_ONLINE,
-                    it.username
-                ))
-                it.socket.send(Frame.Text(response))
+                val response = Json.encodeToString(SetUserOnlineInMessaging(USER_ONLINE, it.username))
+                val responseDto = SocketModelDto(
+                    SocketActions.UPDATE_USER_ONLINE_STATUS_IN_CHAT.toString(),
+                    response
+                )
+                it.socket.send(Frame.Text(Json.encodeToString(responseDto)))
             }
         }
         val roomsIdsListWithUser = Room.fetchAllRoomsIdsWithUser(username)
         for (roomId in roomsIdsListWithUser) {
             RoomsUsers.fetchUsersIdsInRoom(roomId).forEach {
                 if (WebSocketConnectionHandler.roomObserversClients.containsKey(it)) {
-                    val response = Json.encodeToString(SetUserOnlineInRoom(
-                      USER_ONLINE,
-                        username,
-                        roomId,
-                        dateText
-                    ))
-                    WebSocketConnectionHandler.roomObserversClients[it]?.socket?.send(Frame.Text(response))
+                    val response = Json.encodeToString(SetUserOnlineInRoom(USER_ONLINE, username, roomId, dateText))
+                    val responseDto = SocketModelDto(
+                        SocketActions.UPDATE_USER_ONLINE_IN_ROOM.toString(),
+                        response
+                    )
+                    WebSocketConnectionHandler.roomObserversClients[it]?.socket?.send(Frame.Text(Json.encodeToString(responseDto)))
                 }
             }
         }
@@ -76,24 +76,25 @@ open class OnlineController {
         val rooms = RoomsUsers.fetchRoomsIdsForUser(userId)
         for (room in rooms) {
             WebSocketConnectionHandler.messagingClients.values.filter { it.roomId == room }.forEach {
-                val response = Json.encodeToString(SetUserOnlineInMessaging(
-                    USER_OFFLINE,
-                    dateText
-                ))
-                it.socket.send(Frame.Text(response))
+                val response = Json.encodeToString(SetUserOnlineInMessaging(USER_OFFLINE, dateText))
+                val responseDto = SocketModelDto(
+                    SocketActions.UPDATE_USER_ONLINE_STATUS_IN_CHAT.toString(),
+                    response
+                )
+                it.socket.send(Frame.Text(Json.encodeToString(responseDto)))
             }
         }
         val roomsIdsListWithUser = Room.fetchAllRoomsIdsWithUser(username)
         for (roomId in roomsIdsListWithUser) {
+            Room.updateUserLastAuth(roomId, dateText)
             RoomsUsers.fetchUsersIdsInRoom(roomId).forEach {
                 if (WebSocketConnectionHandler.roomObserversClients.containsKey(it)) {
-                    val response = Json.encodeToString(SetUserOnlineInRoom(
-                        USER_OFFLINE,
-                        username,
-                        roomId,
-                        dateText
-                    ))
-                    WebSocketConnectionHandler.roomObserversClients[it]?.socket?.send(Frame.Text(response))
+                    val response = Json.encodeToString(SetUserOnlineInRoom(USER_OFFLINE, username, roomId, dateText))
+                    val responseDto = SocketModelDto(
+                        SocketActions.UPDATE_USER_ONLINE_IN_ROOM.toString(),
+                        response
+                    )
+                    WebSocketConnectionHandler.roomObserversClients[it]?.socket?.send(Frame.Text(Json.encodeToString(responseDto)))
                 }
             }
         }

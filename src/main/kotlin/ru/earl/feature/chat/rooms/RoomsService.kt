@@ -1,4 +1,4 @@
-package ru.earl.feature.chat
+package ru.earl.feature.chat.rooms
 
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -7,6 +7,7 @@ import io.ktor.server.response.*
 import io.ktor.websocket.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import ru.earl.feature.chat.*
 import ru.earl.models.roomOccupancy.RoomOccupancy
 import ru.earl.models.rooms.Room
 import ru.earl.models.rooms.RoomDto
@@ -43,7 +44,6 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
                         val contactId = User.fetchUserByUsername(contactName)?.userId
                         val isOnline = UserDetails.checkUserOnline(contactId!!)
                         val roomResponse = RoomResponse(
-                            ADD_ROOM_KEY,
                             room.roomId,
                             room.image,
                             room.author_name,
@@ -62,7 +62,6 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
                         val contactId = User.fetchUserByUsername(contactName!!)?.userId
                         val isOnline = UserDetails.checkUserOnline(contactId!!)
                         val roomResponse = RoomResponse(
-                            ADD_ROOM_KEY,
                             room.roomId ,
                             image ?: "",
                             room.contact_name ,
@@ -91,7 +90,6 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
         val contactId = RoomsUsers.fetchUsersIdsInRoom(roomId).find { it != userId }
         val deletedRoom = Room.fetchRoomByRoomId(roomId)
         val response = RoomResponse(
-            REMOVE_ROOM_KEY,
             deletedRoom?.roomId ?: "",
             deletedRoom?.image ?: "",
             deletedRoom?.contact_name ?: "",
@@ -104,8 +102,13 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
             deletedRoom?.contactLastAuth ?: ""
         )
         val jsonResponse = Json.encodeToString(response)
-        WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == userId }?.socket?.send(Frame.Text(jsonResponse))
-        WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == contactId }?.socket?.send(Frame.Text(jsonResponse))
+        val responseDto = SocketModelDto(
+            SocketActions.REMOVE_DELETED_BY_ANOTHER_USER_ROOM.toString(),
+            jsonResponse
+        )
+        val responseJson = Json.encodeToString(responseDto)
+        WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == userId }?.socket?.send(Frame.Text(responseJson))
+        WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == contactId }?.socket?.send(Frame.Text(responseJson))
         Room.removeRoom(roomId)
         RoomsUsers.deleteUsersInRoom(roomId)
         RoomsMessages.deleteAllMessagesInRoom(roomId)
@@ -126,7 +129,11 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
         val jsonResponse = Json.encodeToString(response)
         val authorId = User.fetchUserByUsername(receive.authorName)?.userId
         val author = WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == authorId }
-        author?.socket?.send(Frame.Text(jsonResponse))
+        val dtoModel = SocketModelDto(
+            SocketActions.UPDATE_LAST_MESSAGE_READ_STATE.toString(),
+            jsonResponse
+        )
+        author?.socket?.send(Frame.Text(Json.encodeToString(dtoModel)))
         call.respond(HttpStatusCode.OK)
     }
 
@@ -158,7 +165,6 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
     override suspend fun sendNewRoomToContacts(userId: String, newRoom: RoomDto) {
         val contactId = User.fetchUserByUsername(newRoom.contact_name)?.userId
         val authorRoomResponse = RoomResponse(
-            ADD_ROOM_KEY,
             newRoom.roomId,
             newRoom.image,
             title = newRoom.contact_name,
@@ -171,7 +177,6 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
             newRoom.contactLastAuth
         )
         val contactRoomResponse = RoomResponse(
-            ADD_ROOM_KEY,
             newRoom.roomId,
             newRoom.image,
             title = newRoom.author_name,
@@ -185,12 +190,20 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
         )
         try {
             val jsonAuthorRoom = Json.encodeToString(authorRoomResponse)
+            val authorRoomDto = SocketModelDto(
+                SocketActions.NEW_ROOM.toString(),
+                jsonAuthorRoom
+            )
             val jsonContactRoom = Json.encodeToString(contactRoomResponse)
+            val contactRoomDto = SocketModelDto(
+                SocketActions.NEW_ROOM.toString(),
+                jsonContactRoom
+            )
             WebSocketConnectionHandler.roomObserversClients.values.forEach { member ->
                 if (member.userId == userId) {
-                    member.socket.send(Frame.Text(jsonAuthorRoom))
+                    member.socket.send(Frame.Text(Json.encodeToString(authorRoomDto)))
                 } else if (member.userId == contactId) {
-                    member.socket.send(Frame.Text(jsonContactRoom))
+                    member.socket.send(Frame.Text(Json.encodeToString(contactRoomDto)))
                 }
             }
         } catch (e: Exception) {
@@ -200,8 +213,6 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
 
     companion object {
 
-        private const val ADD_ROOM_KEY = "addRoom"
-        private const val REMOVE_ROOM_KEY = "remove"
         private const val DEFAULT_DELETABLE_ROOM_VALUE = "true"
         private const val MSG_UNREAD_KEY = 0
         private const val FIRST_UNREAD_MSG_IN_ROOM = 0

@@ -1,9 +1,9 @@
-package ru.earl.feature.chat
+package ru.earl.feature.chat.groups
 
 import io.ktor.websocket.*
 
-data class RoomMember(
+data class GroupMember(
     val username: String,
     val socket: WebSocketSession,
-    val roomId: String
+    val groupId: String
 )

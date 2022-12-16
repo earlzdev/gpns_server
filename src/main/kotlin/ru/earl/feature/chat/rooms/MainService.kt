@@ -1,8 +1,9 @@
-package ru.earl.feature.chat
+package ru.earl.feature.chat.rooms
 
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
+import ru.earl.feature.chat.OnlineController
 import ru.earl.models.userDetails.UserDetails
 
 interface MainService {

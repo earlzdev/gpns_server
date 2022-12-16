@@ -189,4 +189,16 @@ object Room : Table("rooms") {
             e.printStackTrace()
         }
     }
+
+    fun updateUserLastAuth(room_id: String, lastAuthDate: String) {
+        try {
+            transaction {
+                Room.update({ roomId eq room_id }) {
+                    it[contactLastAuth] = lastAuthDate
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }
