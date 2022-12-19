@@ -1,21 +1,23 @@
-package ru.earl.models.commonGroup
+package ru.earl.models.group
 
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
-import ru.earl.feature.chat.NewCommonGroupLastMsg
+import ru.earl.feature.chat.GroupLastMessage
 
 object Groups : Table("groups") {
 
-    private val groupId = Groups.integer("id")
+    private val groupId = Groups.varchar("id", 36)
     private val title = Groups.varchar("title", 50)
     private val image = Groups.varchar("image", 2500)
     private val lastMsgText = Groups.varchar("last_message", 1000)
     private val lastMsgAuthor = Groups.varchar("last_message_author", 50)
     private val lastMsgTimestamp = Groups.varchar("last_message_timestamp", 150)
     private val lastMsgAuthorImage = Groups.varchar("last_message_author_image", 2500)
+    private val companionGroup = Groups.integer("companion_group")
+    private val messagesCount = Groups.integer("messages_count")
 
     fun insertNewGroup(group: GroupsDto) {
         try {
@@ -28,6 +30,8 @@ object Groups : Table("groups") {
                     it[lastMsgAuthor] = group.lastMsgAuthor
                     it[lastMsgTimestamp] = group.lastMsgTimestamp
                     it[lastMsgAuthorImage] = group.lastMsgAuthorImage
+                    it[companionGroup] = group.companionGroup
+                    it[messagesCount] = group.messagesCount
                 }
             }
         } catch (e: Exception) {
@@ -35,10 +39,10 @@ object Groups : Table("groups") {
         }
     }
 
-    fun updateLastMsg(newLastMsg: NewCommonGroupLastMsg) {
+    fun updateLastMsg(newLastMsg: GroupLastMessage) {
         try {
             transaction {
-                Groups.update {
+                Groups.update({ groupId eq newLastMsg.groupsId }) {
                     it[lastMsgAuthor] = newLastMsg.authorName
                     it[lastMsgText] = newLastMsg.msgText
                     it[lastMsgTimestamp] = newLastMsg.timestamp
@@ -52,17 +56,17 @@ object Groups : Table("groups") {
 
     fun checkCommonGroupAvailability() : Boolean {
         return try {
-            transaction { Groups.select { groupId eq 0 }.single() != null }
+            transaction { Groups.select { groupId eq "common" }.single() != null }
         } catch (e: Exception) {
             e.printStackTrace()
             false
         }
     }
 
-    fun fetchCommonGroup() : GroupsDto? {
+    fun fetchGroupByGroupId(group_id: String) : GroupsDto? {
         return try {
             transaction {
-                val query = Groups.select { groupId.eq(0) }.single()
+                val query = Groups.select { groupId.eq(group_id) }.single()
                 GroupsDto(
                     query[groupId],
                     query[title],
@@ -70,7 +74,9 @@ object Groups : Table("groups") {
                     query[lastMsgText],
                     query[lastMsgAuthor],
                     query[lastMsgTimestamp],
-                    query[lastMsgAuthorImage]
+                    query[lastMsgAuthorImage],
+                    query[companionGroup],
+                    query[messagesCount]
                 )
             }
         } catch (e: Exception) {

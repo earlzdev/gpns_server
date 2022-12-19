@@ -104,7 +104,7 @@ class WebSocketServiceImpl() : WebSocketsService, OnlineController() {
                     groupId
                 )
                 println("client $clientUsername connected to group")
-                println("${WebSocketConnectionHandler.groupMessagingClients.values}")
+                println("groups observers -> ${WebSocketConnectionHandler.groupMessagingClients.values}")
             }
         }
     }

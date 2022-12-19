@@ -6,7 +6,9 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.channels.consumeEach
+import ru.earl.feature.chat.groups.GroupMessageResponse
 import ru.earl.feature.chat.groups.GroupServiceImpl
+import ru.earl.feature.chat.groups.GroupsMessagingServiceImpl
 import ru.earl.feature.chat.rooms.MainServiceImpl
 import ru.earl.feature.chat.rooms.MessagingServiceImpl
 import ru.earl.feature.chat.rooms.RoomsServiceImpl
@@ -18,7 +20,8 @@ fun Application.configureChatRouting() {
         WebSocketServiceImpl(),
         MainServiceImpl(),
         RoomsServiceImpl(),
-        GroupServiceImpl()
+        GroupServiceImpl(),
+        GroupsMessagingServiceImpl()
     )
     
     routing {
@@ -56,7 +59,7 @@ fun Application.configureChatRouting() {
                 try {
                     incoming.consumeEach { frame ->
                         if (frame is Frame.Text) {
-                            // todo
+                            chatController.sendMessageInGroup(frame.readText())
                         }
                     }
                 } catch (e: Exception) {
@@ -68,15 +71,24 @@ fun Application.configureChatRouting() {
             get("/fetchRooms") {
                 chatController.fetchRoomsForUser(call)
             }
+            get("/fetchGroups") {
+                chatController.fetchGroups(call)
+            }
             get("/users") {
                 chatController.fetchUsersListForUser(call)
             }
             get("/fetchUserInfo") {
                 chatController.fetchUserInfo(call)
-                chatController.insertCommonGroup()
+                chatController.insertCommonGroup(call)
             }
             post("/fetchMessagesForRoom") {
                 chatController.fetchAllMessages(call)
+            }
+            post("/fetchMessagesForGroup") {
+                chatController.fetchAllMessagesInGroup(call)
+            }
+            post("/groupTypingStatus") {
+                chatController.sendUpdateTypingMessageInGroup(call)
             }
             post("/markAuthoredMessagesAsRead") {
                 chatController.markAuthoredMessageAsRead(call)
