@@ -45,16 +45,8 @@ data class TypingMessageDto(
 )
 
 @Serializable
-data class NewCommonGroupLastMsg(
-    val authorName: String,
-    val authorImage: String,
-    val msgText: String,
-    val timestamp: String
-)
-
-@Serializable
-data class NewCompGroupLastMsg(
-    val compGroupId: String,
+data class GroupLastMessage(
+    val groupsId: String,
     val authorName: String,
     val authorImage: String,
     val msgText: String,

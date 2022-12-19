@@ -113,7 +113,8 @@ class MessagingServiceImpl() : MessagingService, OnlineController() {
     override suspend fun sendTypingMessageRequest(call: ApplicationCall) {
         authenticate(call)
         val response = call.receive<TypingMessageDto>()
-        WebSocketConnectionHandler.messagingClients.values.find { it.roomId == response.roomId && it.username != response.username }.apply {
+        WebSocketConnectionHandler.messagingClients.values
+            .find { it.roomId == response.roomId && it.username != response.username }.apply {
             val responseDto = SocketModelDto(
                 SocketActions.UPDATE_USER_TYPING_MESSAGE_STATE.toString(),
                 Json.encodeToString(response)
@@ -132,7 +133,9 @@ class MessagingServiceImpl() : MessagingService, OnlineController() {
             receivedMessage.messageText,
             MSG_UNREAD_KEY
         )
-        Room.updateLastMessage(receivedMessage.roomId, receivedMessage.messageText, User.fetchUserById(receivedMessage.authorId)?.username ?: "")
+        Room.updateLastMessage(
+            receivedMessage.roomId, receivedMessage.messageText,
+            User.fetchUserById(receivedMessage.authorId)?.username ?: "")
         val authorId = receivedMessage.authorId
         val contactId = RoomsUsers.fetchUsersIdsInRoom(receivedMessage.roomId).find { it != authorId }
         val roomOccupancy = RoomOccupancy.checkRoomOccupancy(updatableMessage.roomId)
@@ -143,8 +146,10 @@ class MessagingServiceImpl() : MessagingService, OnlineController() {
                 SocketActions.UPDATE_LAST_MESSAGE_IN_ROOM.toString(),
                 encodedMessageForUpdate
             )
-            WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == authorId }?.socket?.send(Frame.Text(Json.encodeToString(responseDto)))
-            WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == contactId }?.socket?.send(Frame.Text(Json.encodeToString(responseDto)))
+            WebSocketConnectionHandler.roomObserversClients.values
+                .find { it.userId == authorId }?.socket?.send(Frame.Text(Json.encodeToString(responseDto)))
+            WebSocketConnectionHandler.roomObserversClients.values
+                .find { it.userId == contactId }?.socket?.send(Frame.Text(Json.encodeToString(responseDto)))
         } else if (roomOccupancy != 2) {
             updatableMessage.read = MSG_UNREAD_KEY
             Room.increaseRoomUnreadMessagesCount(receivedMessage.roomId)
@@ -154,8 +159,10 @@ class MessagingServiceImpl() : MessagingService, OnlineController() {
                 SocketActions.UPDATE_LAST_MESSAGE_IN_ROOM.toString(),
                 encodedMessageForUpdate
             )
-            WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == authorId }?.socket?.send(Frame.Text(Json.encodeToString(responseDto)))
-            WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == contactId }?.socket?.send(Frame.Text(Json.encodeToString(responseDto)))
+            WebSocketConnectionHandler.roomObserversClients.values
+                .find { it.userId == authorId }?.socket?.send(Frame.Text(Json.encodeToString(responseDto)))
+            WebSocketConnectionHandler.roomObserversClients.values
+                .find { it.userId == contactId }?.socket?.send(Frame.Text(Json.encodeToString(responseDto)))
         }
     }
 
@@ -170,7 +177,6 @@ class MessagingServiceImpl() : MessagingService, OnlineController() {
     }
 
     companion object {
-
         private const val MSG_READ_KEY = 1
         private const val MSG_UNREAD_KEY = 0
     }

@@ -6,6 +6,8 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
+import ru.earl.feature.chat.groups.GroupServiceImpl
+import ru.earl.models.groupUsers.GroupUsers
 import ru.earl.models.userDetails.UserDetails
 import ru.earl.models.userDetails.UserDetailsDto
 import ru.earl.models.users.User
@@ -57,6 +59,7 @@ class AuthController(
                 1
             ))
             UsersOnline.setUserOnline(userId)
+            GroupUsers.insertNewUserForGroup(userId, COMMON_GROUP_ID)
             call.respond(HttpStatusCode.OK, "success")
         } catch (e: Exception) {
             e.printStackTrace()
@@ -91,7 +94,6 @@ class AuthController(
                     value = user.userId
                 )
             )
-            println("login token  $token")
             call.respond(
                 status = HttpStatusCode.OK,
                 message = AuthResponses(
@@ -107,5 +109,9 @@ class AuthController(
         val userId = principal?.getClaim("userId", String::class)
         println("userId -> $userId")
         call.respond(HttpStatusCode.OK, TokenResponse(userId!!))
+    }
+
+    companion object {
+        private const val COMMON_GROUP_ID = "common"
     }
 }

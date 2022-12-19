@@ -15,7 +15,6 @@ import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
-
 open class OnlineController {
 
     protected suspend fun authenticate(call: ApplicationCall): String? {

@@ -4,6 +4,7 @@ import io.ktor.server.application.*
 import io.ktor.websocket.*
 import ru.earl.feature.chat.groups.GroupService
 import ru.earl.feature.chat.groups.GroupServiceImpl
+import ru.earl.feature.chat.groups.GroupsMessagingService
 import ru.earl.feature.chat.rooms.*
 import ru.earl.models.rooms.RoomDto
 
@@ -12,8 +13,9 @@ class ChatController(
     private val webSocketServiceImpl: WebSocketServiceImpl,
     private val mainServiceImpl: MainServiceImpl,
     private val roomsServiceImpl: RoomsServiceImpl,
-    private val groupsService: GroupServiceImpl
-) : MessagingService, RoomsService, MainService, WebSocketsService, GroupService {
+    private val groupsService: GroupServiceImpl,
+    private val groupsMessagingService: GroupsMessagingService
+) : MessagingService, RoomsService, MainService, WebSocketsService, GroupService, GroupsMessagingService {
 
     override suspend fun fetchUsersListForUser(call: ApplicationCall) {
         mainServiceImpl.fetchUsersListForUser(call)
@@ -87,16 +89,8 @@ class ChatController(
         webSocketServiceImpl.closeRoomMessagingSocket(call)
     }
 
-    override suspend fun insertCommonGroup() {
-        groupsService.insertCommonGroup()
-    }
-
-    override suspend fun fetchCompanionGroup(call: ApplicationCall) {
-        groupsService.fetchCompanionGroup(call)
-    }
-
-    override suspend fun fetchCommonGroup(call: ApplicationCall) {
-        groupsService.fetchCommonGroup(call)
+    override suspend fun insertCommonGroup(call: ApplicationCall) {
+        groupsService.insertCommonGroup(call)
     }
 
     override suspend fun initGroupMessagingWebSocket(call: ApplicationCall, socket: WebSocketSession) {
@@ -105,5 +99,21 @@ class ChatController(
 
     override suspend fun closeGroupWebSocketSession(call: ApplicationCall) {
         webSocketServiceImpl.closeGroupWebSocketSession(call)
+    }
+
+    override suspend fun fetchGroups(call: ApplicationCall) {
+        groupsService.fetchGroups(call)
+    }
+
+    override suspend fun fetchAllMessagesInGroup(call: ApplicationCall) {
+        groupsMessagingService.fetchAllMessagesInGroup(call)
+    }
+
+    override suspend fun sendMessageInGroup(messageJson: String) {
+        groupsMessagingService.sendMessageInGroup(messageJson)
+    }
+
+    override suspend fun sendUpdateTypingMessageInGroup(call: ApplicationCall) {
+        groupsMessagingService.sendUpdateTypingMessageInGroup(call)
     }
 }

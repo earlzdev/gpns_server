@@ -1,6 +1,7 @@
 package ru.earl.feature.chat
 
 import kotlinx.serialization.Serializable
+import java.math.BigInteger
 
 @Serializable
 data class RoomResponse(
@@ -14,6 +15,19 @@ data class RoomResponse(
     val lastMsgRead: Int,
     val contactIsOnline: Int,
     val contactLastAuth: String
+)
+
+@Serializable
+data class GroupResponse(
+    val groupId: String,
+    val title: String,
+    val image: String,
+    val lastMessage: String,
+    val lastMessageAuthor: String,
+    val lastMessageAuthorImage: String,
+    val lastMessageTimestamp: String,
+    val companionGroup: Int,
+    val messagesCount: Int
 )
 
 @Serializable
