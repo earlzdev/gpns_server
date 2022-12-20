@@ -12,5 +12,6 @@ data class GroupsDto(
     val lastMsgTimestamp: String,
     val lastMsgAuthorImage: String,
     val companionGroup: Int,
-    val messagesCount: Int
+    val messagesCount: Int,
+    val lastMsgRead: Int
 )

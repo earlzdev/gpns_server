@@ -7,6 +7,7 @@ import ru.earl.feature.chat.OnlineController
 import ru.earl.models.group.Groups
 import ru.earl.models.group.GroupsDto
 import ru.earl.models.groupUsers.GroupUsers
+import ru.earl.models.group_occupancy.GroupOccupancy
 
 interface GroupService {
 
@@ -29,10 +30,12 @@ class GroupServiceImpl() : GroupService, OnlineController() {
                     "",
                     "",
                     0,
+                    0,
                     0
                 )
                 Groups.insertNewGroup(commonGroup)
                 GroupUsers.insertNewUserForGroup(this, COMMON_GROUP_ID)
+                GroupOccupancy.insertNewGroupOccupancy(COMMON_GROUP_ID)
             }
         }
     }
@@ -40,6 +43,8 @@ class GroupServiceImpl() : GroupService, OnlineController() {
     override suspend fun fetchGroups(call: ApplicationCall) {
         authenticate(call)?.apply {
             val groupsIdsList = GroupUsers.fetchGroupsIdsForUserById(this)
+            println("user id -> $this")
+            println("groups ids list -> $groupsIdsList")
             val readyList = mutableListOf<GroupsDto?>()
             for (i in groupsIdsList.indices) {
                 readyList.add(Groups.fetchGroupByGroupId(groupsIdsList[i]))

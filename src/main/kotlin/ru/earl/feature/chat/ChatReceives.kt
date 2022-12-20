@@ -50,5 +50,6 @@ data class GroupLastMessage(
     val authorName: String,
     val authorImage: String,
     val msgText: String,
-    val timestamp: String
+    val timestamp: String,
+    val lastMessageRead: Int
 )

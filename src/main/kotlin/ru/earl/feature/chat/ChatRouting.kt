@@ -6,7 +6,6 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.channels.consumeEach
-import ru.earl.feature.chat.groups.GroupMessageResponse
 import ru.earl.feature.chat.groups.GroupServiceImpl
 import ru.earl.feature.chat.groups.GroupsMessagingServiceImpl
 import ru.earl.feature.chat.rooms.MainServiceImpl
@@ -96,8 +95,8 @@ fun Application.configureChatRouting() {
             post("/deleteRoom") {
                 chatController.deleteRoom(call)
             }
-            post("/markMessagesAsRead") {
-                chatController.markMessagesAsRead(call)
+            post("/markMessagesAsReadInGroup") {
+                chatController.markMessagesAsReadInGroup(call)
             }
             post("/updateLastMsgReadState") {
                 chatController.updateLastMessageReadState(call)

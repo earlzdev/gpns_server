@@ -29,8 +29,8 @@ class ChatController(
         messagingServiceImpl.sendMessage(messageJson)
     }
 
-    override suspend fun markMessagesAsRead(call: ApplicationCall) {
-        messagingServiceImpl.markMessagesAsRead(call)
+    override suspend fun markMessagesAsReadInGroup(call: ApplicationCall) {
+        groupsMessagingService.markMessagesAsReadInGroup(call)
     }
 
     override suspend fun sendTypingMessageRequest(call: ApplicationCall) {
@@ -115,5 +115,9 @@ class ChatController(
 
     override suspend fun sendUpdateTypingMessageInGroup(call: ApplicationCall) {
         groupsMessagingService.sendUpdateTypingMessageInGroup(call)
+    }
+
+    override suspend fun markMessagesAsRead(call: ApplicationCall) {
+        messagingServiceImpl.markMessagesAsRead(call)
     }
 }

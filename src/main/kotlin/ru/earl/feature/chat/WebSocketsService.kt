@@ -7,6 +7,7 @@ import io.ktor.websocket.*
 import ru.earl.feature.chat.groups.GroupMember
 import ru.earl.feature.chat.rooms.ChatSocketMember
 import ru.earl.feature.chat.rooms.RoomMember
+import ru.earl.models.group_occupancy.GroupOccupancy
 import ru.earl.models.roomOccupancy.RoomOccupancy
 import ru.earl.models.userDetails.UserDetails
 import ru.earl.models.users.User
@@ -93,6 +94,7 @@ class WebSocketServiceImpl() : WebSocketsService, OnlineController() {
     override suspend fun initGroupMessagingWebSocket(call: ApplicationCall, socket: WebSocketSession) {
         authenticate(call)?.apply {
             val groupId = call.parameters["groupId"] ?: ""
+            GroupOccupancy.setUserInGroupOccupancy(groupId)
             val clientUsername = User.fetchUserById(this)?.username ?: ""
             if (WebSocketConnectionHandler.groupMessagingClients.containsKey(clientUsername)) {
                 println("client $clientUsername is already existed in group messaging clients")
@@ -112,6 +114,9 @@ class WebSocketServiceImpl() : WebSocketsService, OnlineController() {
     override suspend fun closeGroupWebSocketSession(call: ApplicationCall) {
         authenticate(call)?.apply {
             val username = UserDetails.fetchUserDetailsById(this)?.username ?: ""
+            val groupId = WebSocketConnectionHandler.groupMessagingClients.values.find { it.username == username }?.groupId ?: ""
+            println("GROUP ID -> $groupId")
+            GroupOccupancy.removeUserFromGroupOccupancy(groupId)
             WebSocketConnectionHandler.groupMessagingClients[username]?.socket?.close()
             if (WebSocketConnectionHandler.groupMessagingClients.containsKey(username)) {
                 WebSocketConnectionHandler.groupMessagingClients.remove(username)
