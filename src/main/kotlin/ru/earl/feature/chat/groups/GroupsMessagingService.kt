@@ -12,8 +12,7 @@ import ru.earl.feature.chat.*
 import ru.earl.models.group.Groups
 import ru.earl.models.groupMessages.GroupMessages
 import ru.earl.models.groupMessages.GroupMessagesDto
-import ru.earl.models.userDetails.UserDetails
-import ru.earl.models.users.User
+import ru.earl.models.group_occupancy.GroupOccupancy
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -25,6 +24,8 @@ interface GroupsMessagingService {
     suspend fun sendMessageInGroup(messageJson: String)
 
     suspend fun sendUpdateTypingMessageInGroup(call: ApplicationCall)
+
+    suspend fun markMessagesAsReadInGroup(call: ApplicationCall)
 }
 
 class GroupsMessagingServiceImpl() : GroupsMessagingService, OnlineController() {
@@ -62,16 +63,35 @@ class GroupsMessagingServiceImpl() : GroupsMessagingService, OnlineController() 
             msgReceived.authorName,
             msgReceived.authorImage,
             msgReceived.messageText,
-            dateText
+            dateText,
+            msgReceived.read
         ))
-        val updatable = LastMessageForUpdateInGroup(
+        val unreadUpdatableMessage = LastMessageForUpdateInGroup(
             msgReceived.groupId,
             msgReceived.authorName,
             msgReceived.authorImage,
             msgReceived.messageText,
-            dateText
+            dateText,
+            MESSAGE_UNREAD_KEY
         )
-        val messageEntity = GroupMessageResponse(
+        val readUpdatableMessage = LastMessageForUpdateInGroup(
+            msgReceived.groupId,
+            msgReceived.authorName,
+            msgReceived.authorImage,
+            msgReceived.messageText,
+            dateText,
+            MESSAGE_READ_KEY
+        )
+        val readMessageEntity = GroupMessageResponse(
+            msgReceived.groupId,
+            msgReceived.messageId,
+            msgReceived.authorName,
+            msgReceived.authorImage,
+            dateText,
+            msgReceived.messageText,
+            MESSAGE_READ_KEY
+        )
+        val unreadMessageEntity = GroupMessageResponse(
             msgReceived.groupId,
             msgReceived.messageId,
             msgReceived.authorName,
@@ -80,20 +100,50 @@ class GroupsMessagingServiceImpl() : GroupsMessagingService, OnlineController() 
             msgReceived.messageText,
             MESSAGE_UNREAD_KEY
         )
-        val messageDto = SocketModelDto(
+        val readMessageDto = SocketModelDto(
             SocketActions.NEW_MESSAGE_IN_GROUP.toString(),
-            Json.encodeToString(messageEntity)
+            Json.encodeToString(readMessageEntity)
         )
-        val updatableMessageDto = SocketModelDto(
+        val unreadMessageDto = SocketModelDto(
+            SocketActions.NEW_MESSAGE_IN_GROUP.toString(),
+            Json.encodeToString(unreadMessageEntity)
+        )
+        val unreadUpdatableMessageDto = SocketModelDto(
             SocketActions.NEW_UPDATABLE_MESSAGE_IN_GROUP.toString(),
-            Json.encodeToString(updatable)
+            Json.encodeToString(unreadUpdatableMessage)
         )
-        WebSocketConnectionHandler.roomObserversClients.values.forEach {
-            it.socket.send(Frame.Text(Json.encodeToString(updatableMessageDto)))
+        val readUpdatableMessageDto = SocketModelDto(
+            SocketActions.NEW_UPDATABLE_MESSAGE_IN_GROUP.toString(),
+            Json.encodeToString(readUpdatableMessage)
+        )
+        val inGroupUsers =
+            WebSocketConnectionHandler.groupMessagingClients.values.filter { it.groupId == msgReceived.groupId }
+        val inGroupUserUsernames = inGroupUsers.map { it.username }
+        val notInGroupUsers =
+            WebSocketConnectionHandler.roomObserversClients.values.filter { !inGroupUserUsernames.contains(it.provideUsername()) }
+        val inGroup =
+            WebSocketConnectionHandler.roomObserversClients.values.filter { inGroupUserUsernames.contains(it.provideUsername()) }
+
+        if (GroupOccupancy.isSomebodyInGroup(msgReceived.groupId)) {
+            inGroup.forEach {
+                it.socket.send(Frame.Text(Json.encodeToString(readUpdatableMessageDto)))
+            }
+        } else {
+            inGroup.forEach {
+                it.socket.send(Frame.Text(Json.encodeToString(unreadUpdatableMessageDto)))
+            }
+        }
+        notInGroupUsers.forEach {
+            it.socket.send(Frame.Text(Json.encodeToString(unreadUpdatableMessageDto)))
         }
         WebSocketConnectionHandler.groupMessagingClients.values.filter { it.groupId == msgReceived.groupId }.forEach {
-            it.socket.send(Frame.Text(Json.encodeToString(messageDto)))
+            if (!GroupOccupancy.isSomebodyInGroup(msgReceived.groupId)) {
+                it.socket.send(Frame.Text(Json.encodeToString(unreadMessageDto)))
+            } else {
+                it.socket.send(Frame.Text(Json.encodeToString(readMessageDto)))
+            }
         }
+        Groups.increaseGroupMessagesCounter(msgReceived.groupId)
     }
 
     override suspend fun sendUpdateTypingMessageInGroup(call: ApplicationCall) {
@@ -106,11 +156,33 @@ class GroupsMessagingServiceImpl() : GroupsMessagingService, OnlineController() 
                 )
                 it.socket.send(Frame.Text(Json.encodeToString(response)))
             }
+            call.respond(HttpStatusCode.OK)
         }
     }
 
+    override suspend fun markMessagesAsReadInGroup(call: ApplicationCall) {
+        val groupId = call.receive<GroupIdReceive>().groupId
+        GroupMessages.markMessagesAsReadInGroup(groupId)
+        Groups.setLastMessageAsRead(groupId)
+        val markMessagesAsReadResponse = SocketModelDto(
+            SocketActions.MARK_MESSAGES_AS_READ_IN_GROUP.toString(),
+            Json.encodeToString(MarkMessagesAsReadInGroupResponse(groupId))
+        )
+        val markAuthoredMessagesAsReadInGroup = SocketModelDto(
+            SocketActions.MARK_AUTHORED_MESSAGES_AS_READ_IN_GROUP.toString(),
+            Json.encodeToString(MarkAuthoredMessagesAsReadInGroup(groupId))
+        )
+        WebSocketConnectionHandler.groupMessagingClients.values.filter { it.groupId == groupId }.forEach {
+            it.socket.send(Frame.Text(Json.encodeToString(markMessagesAsReadResponse)))
+        }
+        WebSocketConnectionHandler.roomObserversClients.values.forEach {
+            it.socket.send(Frame.Text(Json.encodeToString(markAuthoredMessagesAsReadInGroup)))
+        }
+        call.respond(HttpStatusCode.OK)
+    }
+
     companion object {
-        private const val COMMON_GROUP_ID = "common"
         private const val MESSAGE_UNREAD_KEY = 0
+        private const val MESSAGE_READ_KEY = 1
     }
 }

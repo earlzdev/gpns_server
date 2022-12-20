@@ -1,9 +1,6 @@
 package ru.earl.models.groupMessages
 
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object GroupMessages : Table("group_messages") {
@@ -57,6 +54,18 @@ object GroupMessages : Table("group_messages") {
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
+        }
+    }
+
+    fun markMessagesAsReadInGroup(group_id: String) {
+        try {
+            transaction {
+                GroupMessages.update({ groupId eq group_id }) {
+                    it[read] = 1
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }

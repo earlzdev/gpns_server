@@ -1,5 +1,6 @@
 package ru.earl.models.group
 
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
@@ -18,6 +19,7 @@ object Groups : Table("groups") {
     private val lastMsgAuthorImage = Groups.varchar("last_message_author_image", 2500)
     private val companionGroup = Groups.integer("companion_group")
     private val messagesCount = Groups.integer("messages_count")
+    private val lastMsgRead = Groups.integer("last_message_read")
 
     fun insertNewGroup(group: GroupsDto) {
         try {
@@ -32,6 +34,7 @@ object Groups : Table("groups") {
                     it[lastMsgAuthorImage] = group.lastMsgAuthorImage
                     it[companionGroup] = group.companionGroup
                     it[messagesCount] = group.messagesCount
+                    it[lastMsgRead] = group.lastMsgRead
                 }
             }
         } catch (e: Exception) {
@@ -47,6 +50,7 @@ object Groups : Table("groups") {
                     it[lastMsgText] = newLastMsg.msgText
                     it[lastMsgTimestamp] = newLastMsg.timestamp
                     it[lastMsgAuthorImage] = newLastMsg.authorImage
+                    it[lastMsgRead] = newLastMsg.lastMessageRead
                 }
             }
         } catch (e: Exception) {
@@ -63,6 +67,18 @@ object Groups : Table("groups") {
         }
     }
 
+    fun setLastMessageAsRead(group_id: String) {
+        try {
+            transaction {
+                Groups.update({ groupId eq group_id }) {
+                    it[lastMsgRead] = 1
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     fun fetchGroupByGroupId(group_id: String) : GroupsDto? {
         return try {
             transaction {
@@ -76,12 +92,25 @@ object Groups : Table("groups") {
                     query[lastMsgTimestamp],
                     query[lastMsgAuthorImage],
                     query[companionGroup],
-                    query[messagesCount]
+                    query[messagesCount],
+                    query[lastMsgRead]
                 )
             }
         } catch (e: Exception) {
             e.printStackTrace()
             null
+        }
+    }
+
+    fun increaseGroupMessagesCounter(group_id: String) {
+        try {
+            transaction {
+                Groups.update({ groupId eq group_id }) {
+                    it[messagesCount] = messagesCount + 1
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }

@@ -8,7 +8,8 @@ data class LastMessageForUpdateInGroup(
     val authorName: String,
     val authorImage: String,
     val messageText: String,
-    val timestamp: String
+    val timestamp: String,
+    val read: Int
 )
 
 @Serializable
@@ -20,4 +21,14 @@ data class GroupMessageResponse(
     val timestamp: String,
     val messageText: String,
     val read: Int
+)
+
+@Serializable
+data class MarkMessagesAsReadInGroupResponse(
+    val groupId: String
+)
+
+@Serializable
+data class MarkAuthoredMessagesAsReadInGroup(
+    val groupId: String
 )
