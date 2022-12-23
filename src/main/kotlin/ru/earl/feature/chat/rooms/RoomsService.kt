@@ -35,7 +35,8 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
             val readyRoomsList = mutableListOf<RoomResponse>()
             val username = User.fetchUserById(userId)?.username
             if (roomsIdsList.isEmpty()) {
-                call.respond(HttpStatusCode.OK, "No rooms")
+                println("EMPTY ROOMS LIST")
+                call.respond(HttpStatusCode.OK)
             } else {
                 for (i in roomsIdsList.indices) {
                     val room = Room.fetchRoomByRoomId(roomsIdsList[i])
@@ -75,11 +76,12 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
                         )
                         readyRoomsList.add(roomResponse)
                     }
-                    println("ready rooms list $readyRoomsList")
+                    println("READY ROOMS LIST $readyRoomsList")
                 }
                 call.respond(HttpStatusCode.OK, readyRoomsList)
             }
         } else {
+            println("AUTH PROBLEM")
             call.respond(HttpStatusCode.BadRequest, "Authenticate problem")
         }
     }

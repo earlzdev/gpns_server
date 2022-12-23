@@ -98,6 +98,9 @@ fun Application.configureChatRouting() {
             post("/markMessagesAsReadInGroup") {
                 chatController.markMessagesAsReadInGroup(call)
             }
+            post("/markMessagesAsRead") {
+                chatController.markMessagesAsRead(call)
+            }
             post("/updateLastMsgReadState") {
                 chatController.updateLastMessageReadState(call)
             }
