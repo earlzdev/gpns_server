@@ -18,6 +18,9 @@ fun Application.configureSearchRouting() {
             post("/sendNewCompanionForm") {
                 controller.insertNewCompanionForm(call)
             }
+            get("/fetchAllCompForms") {
+                controller.fetchAllForms(call)
+            }
         }
     }
 }
