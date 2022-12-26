@@ -33,3 +33,20 @@ data class CompanionFormReceive(
     val ableToPay: String,
     val comment: String
 )
+
+@Serializable
+data class TripNotificationsReceive(
+    val id: String,
+    val authorName: String,
+    val receiverName: String,
+    val authorTripRole: String,
+    val receiverTripRole: String,
+    val isInvite: Int,
+    val timestamp: String,
+)
+
+@Serializable
+data class TripNotificationAnswer(
+    val tripId: String,
+    val accept: Int
+)

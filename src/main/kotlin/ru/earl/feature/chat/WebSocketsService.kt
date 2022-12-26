@@ -7,6 +7,7 @@ import io.ktor.websocket.*
 import ru.earl.feature.chat.groups.GroupMember
 import ru.earl.feature.chat.rooms.ChatSocketMember
 import ru.earl.feature.chat.rooms.RoomMember
+import ru.earl.feature.search.SearchingMember
 import ru.earl.models.group_occupancy.GroupOccupancy
 import ru.earl.models.roomOccupancy.RoomOccupancy
 import ru.earl.models.userDetails.UserDetails
