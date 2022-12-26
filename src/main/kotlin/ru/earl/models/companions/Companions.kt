@@ -1,6 +1,7 @@
 package ru.earl.models.companions
 
 import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -58,6 +59,16 @@ object Companions : Table("companions") {
       } catch (e: Exception) {
          e.printStackTrace()
          emptyList()
+      }
+   }
+
+   fun deleteCompanionForm(user: String) {
+      try {
+          transaction {
+             Companions.deleteWhere { username eq user }
+          }
+      } catch (e: Exception) {
+         e.printStackTrace()
       }
    }
 }

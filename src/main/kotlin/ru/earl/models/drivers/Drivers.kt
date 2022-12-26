@@ -1,6 +1,7 @@
 package ru.earl.models.drivers
 
 import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -82,6 +83,16 @@ object Drivers : Table("drivers") {
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
+        }
+    }
+
+    fun deleteDriverForm(user: String) {
+        try {
+            transaction {
+                Drivers.deleteWhere { username eq user }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }
