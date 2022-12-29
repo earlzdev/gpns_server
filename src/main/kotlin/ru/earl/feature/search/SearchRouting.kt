@@ -53,6 +53,15 @@ fun Application.configureSearchRouting() {
             post("/answerTripInvitation") {
                 controller.answerTripInvitation(call)
             }
+            post("/fetchAllNotifications") {
+                controller.fetchAllNotificationsForUser(call)
+            }
+            post("/fetchCompanionForm") {
+                controller.fetchCompanionForm(call)
+            }
+            post("/fetchDriverForm") {
+                controller.fetchDriverForm(call)
+            }
         }
     }
 }

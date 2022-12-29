@@ -39,6 +39,9 @@ interface SearchFormsService {
     suspend fun inviteCompanion(call: ApplicationCall)
     suspend fun inviteDriver(call: ApplicationCall)
     suspend fun answerTripInvitation(call: ApplicationCall)
+    suspend fun fetchAllNotificationsForUser(call: ApplicationCall)
+    suspend fun fetchCompanionForm(call: ApplicationCall)
+    suspend fun fetchDriverForm(call: ApplicationCall)
 }
 
 class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
@@ -46,6 +49,7 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
     override suspend fun fetchAllForms(call: ApplicationCall) {
         authenticate(call)?.apply {
             try {
+                val username = UserDetails.fetchUserDetailsById(this)?.username ?: ""
                 val companions = Companions.fetchAllCompanions()
                 val drivers = Drivers.fetchAllDrivers()
                 val readyFormsList = mutableListOf<TripFormDto>()
@@ -91,6 +95,7 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
                         )
                     )
                 }
+                readyFormsList.removeIf { it.username == username }
                 call.respond(HttpStatusCode.OK, readyFormsList)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -131,7 +136,7 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
                         ))
                     ))
                 )
-                WebSocketConnectionHandler.searchingSocketClients.values.forEach {
+                WebSocketConnectionHandler.searchingSocketClients.values.filter { it.username != receive.username }.forEach {
                     it.socket.send(Frame.Text(Json.encodeToString(socketDtoModel)))
                 }
                 call.respond(HttpStatusCode.OK)
@@ -203,7 +208,7 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
                         ))
                     ))
                 )
-                WebSocketConnectionHandler.searchingSocketClients.values.forEach {
+                WebSocketConnectionHandler.searchingSocketClients.values.filter { it.username != receive.username }.forEach {
                     it.socket.send(Frame.Text(Json.encodeToString(socketDtoModel)))
                 }
                 call.respond(HttpStatusCode.OK)
@@ -219,6 +224,13 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
             try {
                 val username = User.fetchUserById(this)?.username ?: ""
                 Companions.deleteCompanionForm(username)
+                val response = SocketModelDto(
+                    SocketActions.REMOVE_DELETED_FORM.toString(),
+                    Json.encodeToString(DeletedSearchingFormDto(username))
+                )
+                WebSocketConnectionHandler.searchingSocketClients.values.filter { it.username != username }.forEach {
+                    it.socket.send(Frame.Text(Json.encodeToString(response)))
+                }
                 call.respond(HttpStatusCode.OK)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -231,6 +243,13 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
             try {
                 val username = User.fetchUserById(this)?.username ?: ""
                 Drivers.deleteDriverForm(username)
+                val response = SocketModelDto(
+                    SocketActions.REMOVE_DELETED_FORM.toString(),
+                    Json.encodeToString(DeletedSearchingFormDto(username))
+                )
+                WebSocketConnectionHandler.searchingSocketClients.values.filter { it.username != username }.forEach {
+                    it.socket.send(Frame.Text(Json.encodeToString(response)))
+                }
                 call.respond(HttpStatusCode.OK)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -240,23 +259,29 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
 
     override suspend fun inviteCompanion(call: ApplicationCall) {
         authenticate(call)?.apply {
+            println("NEW INVITE")
             try {
                 val notificationReceive = call.receive<TripNotificationsReceive>()
                 val currentDate = Date()
                 val dateFormat: DateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
                 val dateText = dateFormat.format(currentDate)
-                TripNotification.insertNewNotification(
-                    TripNotificationsDto(
-                        notificationReceive.id,
-                        notificationReceive.authorName,
-                        notificationReceive.receiverName,
-                        notificationReceive.authorTripRole,
-                        notificationReceive.receiverTripRole,
-                        notificationReceive.isInvite,
-                        dateText,
-                    )
+                val dto = TripNotificationsDto(
+                    notificationReceive.id,
+                    notificationReceive.authorName,
+                    notificationReceive.receiverName,
+                    notificationReceive.authorTripRole,
+                    notificationReceive.receiverTripRole,
+                    notificationReceive.isInvite,
+                    dateText,
                 )
-                // todo send notification by socket
+                TripNotification.insertNewNotification(dto)
+                val socketClient = WebSocketConnectionHandler.searchingSocketClients.values
+                    .find { it.username == notificationReceive.receiverName }
+                val socketModelDto = SocketModelDto(
+                    SocketActions.NEW_INVITE.toString(),
+                    Json.encodeToString(dto)
+                )
+                socketClient?.socket?.send(Frame.Text(Json.encodeToString(socketModelDto)))
                 call.respond(HttpStatusCode.OK)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -272,18 +297,24 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
                 val currentDate = Date()
                 val dateFormat: DateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
                 val dateText = dateFormat.format(currentDate)
-                TripNotification.insertNewNotification(
-                    TripNotificationsDto(
-                        notificationReceive.id,
-                        notificationReceive.authorName,
-                        notificationReceive.receiverName,
-                        notificationReceive.authorTripRole,
-                        notificationReceive.receiverTripRole,
-                        notificationReceive.isInvite,
-                        dateText,
-                    )
+                val dto = TripNotificationsDto(
+                    notificationReceive.id,
+                    notificationReceive.authorName,
+                    notificationReceive.receiverName,
+                    notificationReceive.authorTripRole,
+                    notificationReceive.receiverTripRole,
+                    notificationReceive.isInvite,
+                    dateText,
                 )
-                // todo send notification by socket
+                TripNotification.insertNewNotification(dto)
+                TripNotification.insertNewNotification(dto)
+                val socketClient = WebSocketConnectionHandler.searchingSocketClients.values
+                    .find { it.username == notificationReceive.receiverName }
+                val socketModelDto = SocketModelDto(
+                    SocketActions.NEW_INVITE.toString(),
+                    Json.encodeToString(dto)
+                )
+                socketClient?.socket?.send(Frame.Text(Json.encodeToString(socketModelDto)))
                 call.respond(HttpStatusCode.OK)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -326,6 +357,46 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
             } else {
                 println("no such name in searching observing")
                 println("${WebSocketConnectionHandler.roomObserversClients.values}")
+            }
+        }
+    }
+
+    override suspend fun fetchAllNotificationsForUser(call: ApplicationCall) {
+        authenticate(call)?.apply {
+            val username = User.fetchUserById(this)?.username ?: ""
+            val list = TripNotification.fetchAllTripNotificationsForUser(username)
+            call.respond(HttpStatusCode.OK, list)
+        }
+    }
+
+    override suspend fun fetchCompanionForm(call: ApplicationCall) {
+        authenticate(call)?.apply {
+            try {
+                val name = call.receive<UserNameDto>().name
+                println("name -> $name")
+                val form = Companions.fetchCompanionForm(name)
+                if (form != null) {
+                    call.respond(HttpStatusCode.OK, form)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                call.respond(HttpStatusCode.Conflict)
+            }
+        }
+    }
+
+    override suspend fun fetchDriverForm(call: ApplicationCall) {
+        authenticate(call)?.apply {
+            try {
+                val name = call.receive<UserNameDto>().name
+                println("name -> $name")
+                val form = Drivers.fetchDriverForm(name)
+                if (form != null) {
+                    call.respond(HttpStatusCode.OK, form)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                call.respond(HttpStatusCode.Conflict)
             }
         }
     }

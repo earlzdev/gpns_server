@@ -50,3 +50,8 @@ data class TripNotificationAnswer(
     val tripId: String,
     val accept: Int
 )
+
+@Serializable
+data class UserNameDto(
+    val name: String
+)
