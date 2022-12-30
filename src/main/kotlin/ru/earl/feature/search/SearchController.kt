@@ -31,10 +31,6 @@ class SearchController(
         searchFormsServiceImpl.inviteCompanion(call)
     }
 
-    override suspend fun answerTripInvitation(call: ApplicationCall) {
-        searchFormsServiceImpl.answerTripInvitation(call)
-    }
-
     override suspend fun inviteDriver(call: ApplicationCall) {
         searchFormsServiceImpl.inviteDriver(call)
     }

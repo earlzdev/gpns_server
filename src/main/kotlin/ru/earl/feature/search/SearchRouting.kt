@@ -50,9 +50,6 @@ fun Application.configureSearchRouting() {
             post("/deleteDriverForm") {
                 controller.deleteDriverForm(call)
             }
-            post("/answerTripInvitation") {
-                controller.answerTripInvitation(call)
-            }
             post("/fetchAllNotifications") {
                 controller.fetchAllNotificationsForUser(call)
             }

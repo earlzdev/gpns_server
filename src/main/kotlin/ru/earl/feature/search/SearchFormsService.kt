@@ -39,7 +39,6 @@ interface SearchFormsService {
     suspend fun deleteDriverForm(call: ApplicationCall)
     suspend fun inviteCompanion(call: ApplicationCall)
     suspend fun inviteDriver(call: ApplicationCall)
-    suspend fun answerTripInvitation(call: ApplicationCall)
     suspend fun fetchAllNotificationsForUser(call: ApplicationCall)
     suspend fun fetchCompanionForm(call: ApplicationCall)
     suspend fun fetchDriverForm(call: ApplicationCall)
@@ -379,12 +378,6 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
         }
     }
 
-    override suspend fun answerTripInvitation(call: ApplicationCall) {
-        authenticate(call)?.apply {
-            // todo
-        }
-    }
-
     override suspend fun initSearchingWebSocket(call: ApplicationCall, socket: WebSocketSession) {
         authenticate(call)?.apply {
             val username = UserDetails.fetchUserDetailsById(this)?.username
@@ -421,7 +414,11 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
         authenticate(call)?.apply {
             val username = User.fetchUserById(this)?.username ?: ""
             val list = TripNotification.fetchAllTripNotificationsForUser(username)
-            call.respond(HttpStatusCode.OK, list)
+            val sortedList = list.toMutableList().sortedBy {
+                val sdf = SimpleDateFormat("dd-MM-yyyy HH:mm:ss")
+                sdf.parse(it.timestamp)
+            }
+            call.respond(HttpStatusCode.OK, sortedList)
         }
     }
 
@@ -461,8 +458,31 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
         authenticate(call)?.apply {
             val driverName = call.receive<UserNameDto>().name
             val driverId = User.fetchUserByUsername(driverName)?.userId ?: ""
+            val currentDate = Date()
+            val dateFormat: DateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
+            val dateText = dateFormat.format(currentDate)
             GroupUsers.insertNewUserIntoGroup(driverId, this)
-            // todo send notification
+            val notification = TripNotificationsDto(
+                UUID.randomUUID().toString(),
+                UserDetails.fetchUserDetailsById(this)?.username ?: "",
+                driverName,
+                COMPANION_ROLE,
+                DRIVER_ROLE,
+                3,
+                dateText
+            )
+            TripNotification.insertNewNotification(notification)
+            WebSocketConnectionHandler.searchingSocketClients.values.find { it.username == driverName }?.apply {
+                this.socket.send(Frame.Text(
+                    Json.encodeToString(
+                        SocketModelDto(
+                            SocketActions.NEW_NOTIFICATION.toString(),
+                            Json.encodeToString(notification)
+                        )
+                    )
+                ))
+            }
+            call.respond(HttpStatusCode.OK)
         }
     }
 
@@ -474,8 +494,31 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
         authenticate(call)?.apply {
             val companionName = call.receive<UserNameDto>().name
             val companionId = User.fetchUserByUsername(companionName)?.userId ?: ""
+            val currentDate = Date()
+            val dateFormat: DateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
+            val dateText = dateFormat.format(currentDate)
             GroupUsers.insertNewUserIntoGroup(this, companionId)
-            // todo send notification
+            val notification = TripNotificationsDto(
+                UUID.randomUUID().toString(),
+                UserDetails.fetchUserDetailsById(this)?.username ?: "",
+                companionName,
+                DRIVER_ROLE,
+                COMPANION_ROLE,
+                3,
+                dateText
+            )
+            TripNotification.insertNewNotification(notification)
+            WebSocketConnectionHandler.searchingSocketClients.values.find { it.username == companionName }?.apply {
+                this.socket.send(Frame.Text(
+                    Json.encodeToString(
+                        SocketModelDto(
+                            SocketActions.NEW_NOTIFICATION.toString(),
+                            Json.encodeToString(notification)
+                        )
+                    )
+                ))
+            }
+            call.respond(HttpStatusCode.OK)
         }
     }
 
