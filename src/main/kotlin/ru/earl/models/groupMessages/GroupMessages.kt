@@ -68,4 +68,14 @@ object GroupMessages : Table("group_messages") {
             e.printStackTrace()
         }
     }
+
+    fun deleteAllGroupMessages(group_id: String) {
+        try {
+            transaction {
+                GroupMessages.deleteWhere { groupId eq group_id }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }

@@ -58,4 +58,20 @@ class SearchController(
     override suspend fun fetchDriverForm(call: ApplicationCall) {
         searchFormsServiceImpl.fetchDriverForm(call)
     }
+
+    override suspend fun acceptDriverToRideTogether(call: ApplicationCall) {
+        searchFormsServiceImpl.acceptDriverToRideTogether(call)
+    }
+
+    override suspend fun denyDriverToRideTogether(call: ApplicationCall) {
+        searchFormsServiceImpl.denyDriverToRideTogether(call)
+    }
+
+    override suspend fun acceptCompanionToRideTogether(call: ApplicationCall) {
+        searchFormsServiceImpl.acceptCompanionToRideTogether(call)
+    }
+
+    override suspend fun denyCompanionToRideTogether(call: ApplicationCall) {
+        searchFormsServiceImpl.denyCompanionToRideTogether(call)
+    }
 }

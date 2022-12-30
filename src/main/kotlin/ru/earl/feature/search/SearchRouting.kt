@@ -62,6 +62,18 @@ fun Application.configureSearchRouting() {
             post("/fetchDriverForm") {
                 controller.fetchDriverForm(call)
             }
+            post("/acceptCompanionToDrive") {
+                controller.acceptCompanionToRideTogether(call)
+            }
+            post("/denyCompanionToDrive") {
+                controller.denyCompanionToRideTogether(call)
+            }
+            post("/acceptDriverToDrive") {
+                controller.acceptDriverToRideTogether(call)
+            }
+            post("/denyDriverToDrive") {
+                controller.denyDriverToRideTogether(call)
+            }
         }
     }
 }

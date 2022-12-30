@@ -1,6 +1,7 @@
 package ru.earl.models.groupUsers
 
 import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -26,7 +27,7 @@ object GroupUsers : Table("group_users") {
         }
     }
 
-    fun insertNewUserForGroup(userId: String, groupId: String) {
+    fun insertNewUserForGroup(groupId: String, userId: String) {
         try {
             transaction {
                 if (!checkIsUserInCommonGroup(userId)) {
@@ -38,6 +39,35 @@ object GroupUsers : Table("group_users") {
             }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    fun insertNewUserIntoGroup(groupId: String, userId: String) {
+        try {
+            transaction {
+                GroupUsers.insert {
+                    it[group_id] = groupId
+                    it[user_id] = userId
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun fetchUsersIdsListInGroup(gropId: String) : List<String> {
+        return try {
+            transaction {
+                val queryList = GroupUsers.select { group_id eq gropId }.toList()
+                val readyList = mutableListOf<String>()
+                for (i in queryList.indices) {
+                    readyList.add(queryList[i][user_id])
+                }
+                readyList
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
         }
     }
 
@@ -54,6 +84,16 @@ object GroupUsers : Table("group_users") {
         } catch (e: Exception) {
             e.printStackTrace()
             false
+        }
+    }
+
+    fun deleteAllUserFromGroup(groupId: String) {
+        try {
+            transaction {
+                GroupUsers.deleteWhere { group_id eq groupId }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }
