@@ -1,11 +1,8 @@
 package ru.earl.models.group
 
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
 import ru.earl.feature.chat.GroupLastMessage
 
 object Groups : Table("groups") {
@@ -108,6 +105,16 @@ object Groups : Table("groups") {
                 Groups.update({ groupId eq group_id }) {
                     it[messagesCount] = messagesCount + 1
                 }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun deleteGroup(group_id: String) {
+        try {
+            transaction {
+                Groups.deleteWhere { groupId eq group_id }
             }
         } catch (e: Exception) {
             e.printStackTrace()

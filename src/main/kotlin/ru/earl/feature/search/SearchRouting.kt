@@ -53,6 +53,27 @@ fun Application.configureSearchRouting() {
             post("/answerTripInvitation") {
                 controller.answerTripInvitation(call)
             }
+            post("/fetchAllNotifications") {
+                controller.fetchAllNotificationsForUser(call)
+            }
+            post("/fetchCompanionForm") {
+                controller.fetchCompanionForm(call)
+            }
+            post("/fetchDriverForm") {
+                controller.fetchDriverForm(call)
+            }
+            post("/acceptCompanionToDrive") {
+                controller.acceptCompanionToRideTogether(call)
+            }
+            post("/denyCompanionToDrive") {
+                controller.denyCompanionToRideTogether(call)
+            }
+            post("/acceptDriverToDrive") {
+                controller.acceptDriverToRideTogether(call)
+            }
+            post("/denyDriverToDrive") {
+                controller.denyDriverToRideTogether(call)
+            }
         }
     }
 }

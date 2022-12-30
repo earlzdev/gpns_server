@@ -46,4 +46,32 @@ class SearchController(
     override suspend fun closeSearchingWebSocket(call: ApplicationCall) {
         searchFormsServiceImpl.closeSearchingWebSocket(call)
     }
+
+    override suspend fun fetchAllNotificationsForUser(call: ApplicationCall) {
+        searchFormsServiceImpl.fetchAllNotificationsForUser(call)
+    }
+
+    override suspend fun fetchCompanionForm(call: ApplicationCall) {
+        searchFormsServiceImpl.fetchCompanionForm(call)
+    }
+
+    override suspend fun fetchDriverForm(call: ApplicationCall) {
+        searchFormsServiceImpl.fetchDriverForm(call)
+    }
+
+    override suspend fun acceptDriverToRideTogether(call: ApplicationCall) {
+        searchFormsServiceImpl.acceptDriverToRideTogether(call)
+    }
+
+    override suspend fun denyDriverToRideTogether(call: ApplicationCall) {
+        searchFormsServiceImpl.denyDriverToRideTogether(call)
+    }
+
+    override suspend fun acceptCompanionToRideTogether(call: ApplicationCall) {
+        searchFormsServiceImpl.acceptCompanionToRideTogether(call)
+    }
+
+    override suspend fun denyCompanionToRideTogether(call: ApplicationCall) {
+        searchFormsServiceImpl.denyCompanionToRideTogether(call)
+    }
 }

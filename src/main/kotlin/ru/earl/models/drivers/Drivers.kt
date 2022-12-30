@@ -1,9 +1,6 @@
 package ru.earl.models.drivers
 
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object Drivers : Table("drivers") {
@@ -83,6 +80,44 @@ object Drivers : Table("drivers") {
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
+        }
+    }
+
+    fun fetchDriverForm(name: String) : DriverDto? {
+        return try {
+            transaction {
+                val all = Drivers.selectAll().toList()
+                val ready = mutableListOf<DriverDto>()
+                 for (i in all.indices) {
+                    ready.add(
+                        DriverDto(all[i][username], all[i][userImage], all[i][driveFrom], all[i][driveTo], all[i][catchCompanionFrom], all[i][alsoCanDriveTo], all[i][schedule], all[i][ableToDriveInTurn], all[i][actualTripTime], all[i][car], all[i][carModel], all[i][carColor], all[i][passengersCount], all[i][carGovNumber], all[i][tripPrice], all[i][driverComment])
+                    )
+                }
+                println("all drivers -> $ready")
+                println("name -> $name")
+                val query = Drivers.select { username.eq(name) }.single()
+                DriverDto(
+                    query[username],
+                    query[userImage],
+                    query[driveFrom],
+                    query[driveTo],
+                    query[catchCompanionFrom],
+                    query[alsoCanDriveTo],
+                    query[schedule],
+                    query[ableToDriveInTurn],
+                    query[actualTripTime],
+                    query[car],
+                    query[carModel],
+                    query[carColor],
+                    query[passengersCount],
+                    query[carGovNumber],
+                    query[tripPrice],
+                    query[driverComment],
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
 

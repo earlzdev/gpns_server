@@ -1,9 +1,6 @@
 package ru.earl.models.companions
 
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object Companions : Table("companions") {
@@ -62,6 +59,26 @@ object Companions : Table("companions") {
       }
    }
 
+   fun fetchCompanionForm(name: String) : CompanionDto? {
+      return try {
+         transaction {
+            val query = Companions.select { username eq name }.single()
+            CompanionDto(
+               query[username],
+               query[userImage],
+               query[from],
+               query[to],
+               query[schedule],
+               query[actualTripTime],
+               query[ableToPay],
+               query[comment],
+            )
+         }
+      } catch (e: Exception) {
+         e.printStackTrace()
+         null
+      }
+   }
    fun deleteCompanionForm(user: String) {
       try {
           transaction {

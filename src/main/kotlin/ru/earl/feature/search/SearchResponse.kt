@@ -35,4 +35,9 @@ data class DriverFormDetails(
     val driverComment: String
 ) : TripFormDetails
 
+@Serializable
+data class DeletedSearchingFormDto(
+    val username: String
+)
+
 interface TripFormDetails
