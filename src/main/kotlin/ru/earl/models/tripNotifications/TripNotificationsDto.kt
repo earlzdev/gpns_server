@@ -11,4 +11,5 @@ data class TripNotificationsDto(
     val receiverTripRole: String,
     val type: String,
     val timestamp: String,
+    val active: Int
 )

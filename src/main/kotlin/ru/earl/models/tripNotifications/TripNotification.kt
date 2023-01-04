@@ -12,6 +12,7 @@ object TripNotification : Table("trip_notifications") {
     private val receiverTripRole = TripNotification.varchar("receiver_trip_role", 20)
     private val type = TripNotification.varchar("type", 50)
     private val timestamp = TripNotification.varchar("timestamp", 100)
+    private val active = TripNotification.integer("active")
 
     fun insertNewNotification(notification: TripNotificationsDto) {
         try {
@@ -24,6 +25,7 @@ object TripNotification : Table("trip_notifications") {
                     it[receiverTripRole] = notification.receiverTripRole
                     it[type] = notification.type
                     it[timestamp] = notification.timestamp
+                    it[active] = notification.active
                 }
             }
         } catch (e: Exception) {
@@ -47,6 +49,7 @@ object TripNotification : Table("trip_notifications") {
                             queryListForAuthor[i][receiverTripRole],
                             queryListForAuthor[i][type],
                             queryListForAuthor[i][timestamp],
+                            queryListForAuthor[i][active]
                         )
                     )
                 }
@@ -60,6 +63,7 @@ object TripNotification : Table("trip_notifications") {
                             queryListForReceiver[i][receiverTripRole],
                             queryListForReceiver[i][type],
                             queryListForReceiver[i][timestamp],
+                            queryListForReceiver[i][active],
                         )
                     )
                 }
@@ -68,6 +72,18 @@ object TripNotification : Table("trip_notifications") {
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
+        }
+    }
+
+    fun markTripNotificationAsNotActive(id: String) {
+        try {
+            transaction {
+                TripNotification.update({ notificationId.eq(id) }) {
+                    it[active] = 0
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }

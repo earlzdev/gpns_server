@@ -77,6 +77,12 @@ fun Application.configureSearchRouting() {
             post("/removeCompanionFromGroup") {
                 controller.removeCompanionFromGroup(call)
             }
+            post("/leaveFromCompanionGroup") {
+                controller.leaveFromCompanionGroup(call)
+            }
+            post("/markTripNotificationAsNotActive") {
+                controller.markTripNotificationAsNotActive(call)
+            }
         }
     }
 }

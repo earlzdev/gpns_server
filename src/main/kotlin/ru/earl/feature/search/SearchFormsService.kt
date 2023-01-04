@@ -49,6 +49,8 @@ interface SearchFormsService {
     suspend fun denyCompanionToRideTogether(call: ApplicationCall)
     suspend fun fetchAllCompanionsInGroup(call: ApplicationCall)
     suspend fun removeCompanionFromGroup(call: ApplicationCall)
+    suspend fun leaveFromCompanionGroup(call: ApplicationCall)
+    suspend fun markTripNotificationAsNotActive(call: ApplicationCall)
 }
 
 class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
@@ -298,7 +300,8 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
                         DRIVER_ROLE,
                         COMPANION_ROLE,
                         DELETED_DRIVER_FORM,
-                        dateText
+                        dateText,
+                        ACTIVE
                     )
                     TripNotification.insertNewNotification(notification)
                     WebSocketConnectionHandler.searchingSocketClients.values.forEach {
@@ -341,6 +344,7 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
                     notificationReceive.receiverTripRole,
                     notificationReceive.type,
                     dateText,
+                    ACTIVE
                 )
                 TripNotification.insertNewNotification(dto)
                 val socketClient = WebSocketConnectionHandler.searchingSocketClients.values
@@ -373,6 +377,7 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
                     notificationReceive.receiverTripRole,
                     notificationReceive.type,
                     dateText,
+                    ACTIVE
                 )
                 TripNotification.insertNewNotification(dto)
                 val socketClient = WebSocketConnectionHandler.searchingSocketClients.values
@@ -482,7 +487,8 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
                 COMPANION_ROLE,
                 DRIVER_ROLE,
                 AGREED,
-                dateText
+                dateText,
+                ACTIVE
             )
             val group = Groups.fetchGroupByGroupId(driverId)
             val groupDto = SocketModelDto(
@@ -526,9 +532,10 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
                 DRIVER_ROLE,
                 COMPANION_ROLE,
                 AGREED,
-                dateText
+                dateText,
+                ACTIVE
             )
-            val group = Groups.fetchGroupByGroupId(companionId)
+            val group = Groups.fetchGroupByGroupId(this)
             val groupDto = SocketModelDto(
                 SocketActions.NEW_GROUP.toString(),
                 Json.encodeToString(group)
@@ -588,7 +595,8 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
                     DRIVER_ROLE,
                     COMPANION_ROLE,
                     REMOVED_COMPANION_FROM_GROUP,
-                    dateText
+                    dateText,
+                    ACTIVE
                 )
                 GroupUsers.removeUserFromGroup(companionId, dto.groupId)
                 TripNotification.insertNewNotification(notification)
@@ -616,6 +624,54 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
         }
     }
 
+    override suspend fun leaveFromCompanionGroup(call: ApplicationCall) {
+        authenticate(call)?.apply {
+            val id = this
+            val groupId = call.receive<GroupIdReceive>().groupId
+            val groupAuthorName = User.fetchUserById(groupId)?.username ?: ""
+            val groupUsers = GroupUsers.fetchUsersIdsListInGroup(groupId)
+            val currentDate = Date()
+            val dateFormat: DateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
+            val dateText = dateFormat.format(currentDate)
+            val notification = TripNotificationsDto(
+                UUID.randomUUID().toString(),
+                User.fetchUserById(id)?.username ?: "",
+                groupAuthorName,
+                COMPANION_ROLE,
+                DRIVER_ROLE,
+                COMPANION_LEAVED_GROUP,
+                dateText,
+                ACTIVE
+            )
+            val group = Groups.fetchGroupByGroupId(groupId)
+            WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == id }?.apply {
+                this.socket.send(Frame.Text(Json.encodeToString(
+                    SocketModelDto(
+                        SocketActions.REMOVE_DELETED_GROUP.toString(),
+                        Json.encodeToString(group)
+                    )
+                )))
+            }
+            WebSocketConnectionHandler.searchingSocketClients.values.filter { groupUsers.contains(it.userId) }.forEach {
+                it.socket.send(Frame.Text(Json.encodeToString(
+                    SocketModelDto(
+                        SocketActions.NEW_NOTIFICATION.toString(),
+                        Json.encodeToString(notification)
+                    )
+                )))
+            }
+            TripNotification.insertNewNotification(notification)
+            GroupUsers.removeUserFromGroup(id, groupId)
+        }
+    }
+
+    override suspend fun markTripNotificationAsNotActive(call: ApplicationCall) {
+        authenticate(call)?.apply {
+            val notificationId = call.receive<NotificationIdDto>().id
+            TripNotification.markTripNotificationAsNotActive(notificationId)
+        }
+    }
+
     companion object {
 
         private const val COMPANION_ROLE = "COMPANION_ROLE"
@@ -625,7 +681,9 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
         private const val INVITE = "INVITE"
         private const val DELETED_DRIVER_FORM = "DELETED_DRIVER_FORM"
         private const val AGREED = "AGREED"
+        private const val COMPANION_LEAVED_GROUP = "COMPANION_LEAVED_GROUP"
         private const val REMOVED_COMPANION_FROM_GROUP = "REMOVED_COMPANION_FROM_GROUP"
+        private const val ACTIVE = 1
     }
 }
 
