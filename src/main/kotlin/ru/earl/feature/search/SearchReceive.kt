@@ -45,6 +45,7 @@ data class TripNotificationsReceive(
     val receiverTripRole: String,
     val type: String,
     val timestamp: String,
+    val active: Int
 )
 
 @Serializable
@@ -62,4 +63,10 @@ data class UserNameDto(
 data class RemoveCompanionFromGroupDto(
     val username: String,
     val groupId: String
+)
+
+
+@Serializable
+data class NotificationIdDto(
+    val id: String
 )

@@ -78,4 +78,12 @@ class SearchController(
     override suspend fun removeCompanionFromGroup(call: ApplicationCall) {
         searchFormsServiceImpl.removeCompanionFromGroup(call)
     }
+
+    override suspend fun leaveFromCompanionGroup(call: ApplicationCall) {
+        searchFormsServiceImpl.leaveFromCompanionGroup(call)
+    }
+
+    override suspend fun markTripNotificationAsNotActive(call: ApplicationCall) {
+        searchFormsServiceImpl.markTripNotificationAsNotActive(call)
+    }
 }
