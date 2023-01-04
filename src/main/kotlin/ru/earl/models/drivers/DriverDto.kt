@@ -19,5 +19,6 @@ data class DriverDto(
     val passengersCount: Int,
     val carGovNumber: String,
     val tripPrice: Int,
-    val driverComment: String
+    val driverComment: String,
+    val active: Int
 )

@@ -10,7 +10,8 @@ data class TripFormDto(
     val from: String,
     val to: String,
     val schedule: String,
-    val details: String
+    val details: String,
+    val active: Int
 )
 
 @Serializable

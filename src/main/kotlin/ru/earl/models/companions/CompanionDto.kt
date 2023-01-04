@@ -11,5 +11,6 @@ data class CompanionDto(
     val schedule: String,
     val actualTripTime: String,
     val ableToPay: String,
-    val comment: String
+    val comment: String,
+    val active: Int
 )

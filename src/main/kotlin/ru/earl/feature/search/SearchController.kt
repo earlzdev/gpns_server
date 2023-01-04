@@ -31,10 +31,6 @@ class SearchController(
         searchFormsServiceImpl.inviteCompanion(call)
     }
 
-    override suspend fun answerTripInvitation(call: ApplicationCall) {
-        searchFormsServiceImpl.answerTripInvitation(call)
-    }
-
     override suspend fun inviteDriver(call: ApplicationCall) {
         searchFormsServiceImpl.inviteDriver(call)
     }
@@ -73,5 +69,13 @@ class SearchController(
 
     override suspend fun denyCompanionToRideTogether(call: ApplicationCall) {
         searchFormsServiceImpl.denyCompanionToRideTogether(call)
+    }
+
+    override suspend fun fetchAllCompanionsInGroup(call: ApplicationCall) {
+        searchFormsServiceImpl.fetchAllCompanionsInGroup(call)
+    }
+
+    override suspend fun removeCompanionFromGroup(call: ApplicationCall) {
+        searchFormsServiceImpl.removeCompanionFromGroup(call)
     }
 }

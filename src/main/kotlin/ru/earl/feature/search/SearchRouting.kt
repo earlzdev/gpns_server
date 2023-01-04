@@ -50,9 +50,6 @@ fun Application.configureSearchRouting() {
             post("/deleteDriverForm") {
                 controller.deleteDriverForm(call)
             }
-            post("/answerTripInvitation") {
-                controller.answerTripInvitation(call)
-            }
             post("/fetchAllNotifications") {
                 controller.fetchAllNotificationsForUser(call)
             }
@@ -73,6 +70,12 @@ fun Application.configureSearchRouting() {
             }
             post("/denyDriverToDrive") {
                 controller.denyDriverToRideTogether(call)
+            }
+            post("/fetchAllCompanionsInGroup") {
+                controller.fetchAllCompanionsInGroup(call)
+            }
+            post("/removeCompanionFromGroup") {
+                controller.removeCompanionFromGroup(call)
             }
         }
     }

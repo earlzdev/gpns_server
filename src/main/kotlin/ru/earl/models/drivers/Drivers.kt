@@ -21,6 +21,7 @@ object Drivers : Table("drivers") {
     private val carGovNumber = Drivers.varchar("car_gov_number", 20)
     private val tripPrice = Drivers.integer("trip_price")
     private val driverComment = Drivers.varchar("driver_comment", 1000)
+    private val active = Drivers.integer("active")
 
     fun insertNewDriverForm(driverForm: DriverDto) {
         try {
@@ -42,6 +43,7 @@ object Drivers : Table("drivers") {
                     it[carGovNumber] = driverForm.carGovNumber
                     it[tripPrice] = driverForm.tripPrice
                     it[driverComment] = driverForm.driverComment
+                    it[active] = driverForm.active
                 }
             }
         } catch (e: Exception) {
@@ -73,6 +75,7 @@ object Drivers : Table("drivers") {
                             resultQuery[i][carGovNumber],
                             resultQuery[i][tripPrice],
                             resultQuery[i][driverComment],
+                            resultQuery[i][active]
                         ))
                 }
                 readyList
@@ -90,7 +93,25 @@ object Drivers : Table("drivers") {
                 val ready = mutableListOf<DriverDto>()
                  for (i in all.indices) {
                     ready.add(
-                        DriverDto(all[i][username], all[i][userImage], all[i][driveFrom], all[i][driveTo], all[i][catchCompanionFrom], all[i][alsoCanDriveTo], all[i][schedule], all[i][ableToDriveInTurn], all[i][actualTripTime], all[i][car], all[i][carModel], all[i][carColor], all[i][passengersCount], all[i][carGovNumber], all[i][tripPrice], all[i][driverComment])
+                        DriverDto(
+                            all[i][username],
+                            all[i][userImage],
+                            all[i][driveFrom],
+                            all[i][driveTo],
+                            all[i][catchCompanionFrom],
+                            all[i][alsoCanDriveTo],
+                            all[i][schedule],
+                            all[i][ableToDriveInTurn],
+                            all[i][actualTripTime],
+                            all[i][car],
+                            all[i][carModel],
+                            all[i][carColor],
+                            all[i][passengersCount],
+                            all[i][carGovNumber],
+                            all[i][tripPrice],
+                            all[i][driverComment],
+                            all[i][active]
+                        )
                     )
                 }
                 println("all drivers -> $ready")
@@ -113,6 +134,7 @@ object Drivers : Table("drivers") {
                     query[carGovNumber],
                     query[tripPrice],
                     query[driverComment],
+                    query[active]
                 )
             }
         } catch (e: Exception) {

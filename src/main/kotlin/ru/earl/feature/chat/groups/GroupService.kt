@@ -34,7 +34,7 @@ class GroupServiceImpl() : GroupService, OnlineController() {
                     0
                 )
                 Groups.insertNewGroup(commonGroup)
-                GroupUsers.insertNewUserForGroup(this, COMMON_GROUP_ID)
+                GroupUsers.insertNewUserForCommonGroup(this, COMMON_GROUP_ID)
                 GroupOccupancy.insertNewGroupOccupancy(COMMON_GROUP_ID)
             }
         }
