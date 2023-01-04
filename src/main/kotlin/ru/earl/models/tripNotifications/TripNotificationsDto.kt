@@ -9,6 +9,6 @@ data class TripNotificationsDto(
     val receiverName: String,
     val authorTripRole: String,
     val receiverTripRole: String,
-    val isInvite: Int,
+    val type: String,
     val timestamp: String,
 )

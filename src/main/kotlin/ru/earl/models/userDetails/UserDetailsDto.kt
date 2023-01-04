@@ -5,9 +5,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class UserDetailsDto(
-    @SerialName("userId") val userId: String,
-    @SerialName("image") val image: String,
-    @SerialName("username") val username: String,
-    @SerialName("online") val online: Int,
-    @SerialName("lastAuth") val lastAuth: String
+    val userId: String,
+    val image: String,
+    val username: String,
+    val online: Int,
+    val lastAuth: String,
+    val tripRole: String
 )

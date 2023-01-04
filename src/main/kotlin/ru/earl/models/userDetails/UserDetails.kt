@@ -14,6 +14,7 @@ object UserDetails : Table("users_details") {
     private val username = UserDetails.varchar("username", 25)
     private val online = UserDetails.integer("online")
     private val lastAuth = UserDetails.varchar("last_auth", 150)
+    private val tripRole = UserDetails.varchar("trip_role", 20)
 
     fun fetchAllUsersListForUserById(id: String) : List<UserDetailsDto?> {
         return try {
@@ -26,7 +27,8 @@ object UserDetails : Table("users_details") {
                         item[image],
                         item[username],
                         item[online],
-                        item[lastAuth]
+                        item[lastAuth],
+                        item[tripRole]
                     )
                     readyList.add(details)
                 }
@@ -47,6 +49,7 @@ object UserDetails : Table("users_details") {
                     it[username] = user.username
                     it[online] = user.online
                     it[lastAuth] = user.lastAuth
+                    it[tripRole] = user.tripRole
                 }
             }
         } catch (e: Exception) {
@@ -63,7 +66,8 @@ object UserDetails : Table("users_details") {
                     resultRow[image],
                     resultRow[username],
                     resultRow[online],
-                    resultRow[lastAuth]
+                    resultRow[lastAuth],
+                    resultRow[tripRole]
                 )
             }
         } catch (e: Exception) {
@@ -97,6 +101,42 @@ object UserDetails : Table("users_details") {
         }
     }
 
+    fun setUserTripRoleDriver(user_id: String) {
+        try {
+            transaction {
+                UserDetails.update({ userId eq user_id }) {
+                    it[tripRole] = "DRIVER"
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun setUserTripRoleCompanion(user_id: String) {
+        try {
+            transaction {
+                UserDetails.update({ userId eq user_id }) {
+                    it[tripRole] = "Companion"
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun removeUserTripRole(user_id: String) {
+        try {
+            transaction {
+                UserDetails.update({ userId eq user_id }) {
+                    it[tripRole] = ""
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     fun checkUserOnline(user_id: String) : Int {
         return try {
             transaction {
@@ -106,7 +146,8 @@ object UserDetails : Table("users_details") {
                     query[image],
                     query[username],
                     query[online],
-                    query[lastAuth]
+                    query[lastAuth],
+                    query[tripRole]
                 )
                 println("user in room -> $user")
                 if (user.online == 1) {

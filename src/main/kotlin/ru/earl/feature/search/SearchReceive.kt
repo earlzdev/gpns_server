@@ -19,7 +19,8 @@ data class DriverFormReceive(
     val passengersCount: Int,
     val carGovNumber: String,
     val tripPrice: Int,
-    val driverComment: String
+    val driverComment: String,
+    val active: Int
 )
 
 @Serializable
@@ -31,7 +32,8 @@ data class CompanionFormReceive(
     val schedule: String,
     val actualTripTime: String,
     val ableToPay: String,
-    val comment: String
+    val comment: String,
+    val active: Int
 )
 
 @Serializable
@@ -41,7 +43,7 @@ data class TripNotificationsReceive(
     val receiverName: String,
     val authorTripRole: String,
     val receiverTripRole: String,
-    val isInvite: Int,
+    val type: String,
     val timestamp: String,
 )
 
@@ -54,4 +56,10 @@ data class TripNotificationAnswer(
 @Serializable
 data class UserNameDto(
     val name: String
+)
+
+@Serializable
+data class RemoveCompanionFromGroupDto(
+    val username: String,
+    val groupId: String
 )

@@ -10,7 +10,7 @@ object TripNotification : Table("trip_notifications") {
     private val receiverUsername = TripNotification.varchar("receiver_name", 50)
     private val authorTripRole = TripNotification.varchar("author_trip_role", 20)
     private val receiverTripRole = TripNotification.varchar("receiver_trip_role", 20)
-    private val invite = TripNotification.integer("invite")
+    private val type = TripNotification.varchar("type", 50)
     private val timestamp = TripNotification.varchar("timestamp", 100)
 
     fun insertNewNotification(notification: TripNotificationsDto) {
@@ -22,7 +22,7 @@ object TripNotification : Table("trip_notifications") {
                     it[receiverUsername] = notification.receiverName
                     it[authorTripRole] = notification.authorTripRole
                     it[receiverTripRole] = notification.receiverTripRole
-                    it[invite] = notification.isInvite
+                    it[type] = notification.type
                     it[timestamp] = notification.timestamp
                 }
             }
@@ -45,7 +45,7 @@ object TripNotification : Table("trip_notifications") {
                             queryListForAuthor[i][receiverUsername],
                             queryListForAuthor[i][authorTripRole],
                             queryListForAuthor[i][receiverTripRole],
-                            queryListForAuthor[i][invite],
+                            queryListForAuthor[i][type],
                             queryListForAuthor[i][timestamp],
                         )
                     )
@@ -58,7 +58,7 @@ object TripNotification : Table("trip_notifications") {
                             queryListForReceiver[i][receiverUsername],
                             queryListForReceiver[i][authorTripRole],
                             queryListForReceiver[i][receiverTripRole],
-                            queryListForReceiver[i][invite],
+                            queryListForReceiver[i][type],
                             queryListForReceiver[i][timestamp],
                         )
                     )

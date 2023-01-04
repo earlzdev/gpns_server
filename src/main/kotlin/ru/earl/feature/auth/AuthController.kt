@@ -7,7 +7,10 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import ru.earl.feature.chat.groups.GroupServiceImpl
+import ru.earl.models.group.Groups
+import ru.earl.models.group.GroupsDto
 import ru.earl.models.groupUsers.GroupUsers
+import ru.earl.models.group_occupancy.GroupOccupancy
 import ru.earl.models.userDetails.UserDetails
 import ru.earl.models.userDetails.UserDetailsDto
 import ru.earl.models.users.User
@@ -30,6 +33,7 @@ class AuthController(
 ) {
 
     suspend fun register(call: ApplicationCall) {
+        insertCommonGroup(call)
         val request = call.receive<RegisterRequest>()
         val currentDate = Date()
         val dateFormat: DateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
@@ -49,7 +53,8 @@ class AuthController(
                 "",
                 request.username,
                 1,
-                dateText
+                dateText,
+                ""
             )
             User.insert(user)
             UserDetails.insertUserDetails(userDetails)
@@ -59,7 +64,7 @@ class AuthController(
                 1
             ))
             UsersOnline.setUserOnline(userId)
-            GroupUsers.insertNewUserForGroup(userId, COMMON_GROUP_ID)
+            GroupUsers.insertNewUserForCommonGroup(userId, COMMON_GROUP_ID)
             call.respond(HttpStatusCode.OK, "success")
         } catch (e: Exception) {
             e.printStackTrace()
@@ -101,6 +106,25 @@ class AuthController(
                 )
             )
         }
+    }
+
+    private fun insertCommonGroup(call: ApplicationCall) {
+            if (!Groups.checkCommonGroupAvailability()) {
+                val commonGroup = GroupsDto(
+                    COMMON_GROUP_ID,
+                    "Общий чат",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    0,
+                    0,
+                    0
+                )
+                Groups.insertNewGroup(commonGroup)
+                GroupOccupancy.insertNewGroupOccupancy(COMMON_GROUP_ID)
+            }
     }
 
     suspend fun getSecretInfo(call: ApplicationCall) {

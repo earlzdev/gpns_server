@@ -70,4 +70,12 @@ class SearchController(
     override suspend fun denyCompanionToRideTogether(call: ApplicationCall) {
         searchFormsServiceImpl.denyCompanionToRideTogether(call)
     }
+
+    override suspend fun fetchAllCompanionsInGroup(call: ApplicationCall) {
+        searchFormsServiceImpl.fetchAllCompanionsInGroup(call)
+    }
+
+    override suspend fun removeCompanionFromGroup(call: ApplicationCall) {
+        searchFormsServiceImpl.removeCompanionFromGroup(call)
+    }
 }

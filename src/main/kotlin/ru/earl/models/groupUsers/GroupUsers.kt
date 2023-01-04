@@ -1,9 +1,6 @@
 package ru.earl.models.groupUsers
 
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object GroupUsers : Table("group_users") {
@@ -27,7 +24,7 @@ object GroupUsers : Table("group_users") {
         }
     }
 
-    fun insertNewUserForGroup(groupId: String, userId: String) {
+    fun insertNewUserForCommonGroup(userId: String, groupId: String) {
         try {
             transaction {
                 if (!checkIsUserInCommonGroup(userId)) {
@@ -91,6 +88,16 @@ object GroupUsers : Table("group_users") {
         try {
             transaction {
                 GroupUsers.deleteWhere { group_id eq groupId }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun removeUserFromGroup(userId: String, groupId: String) {
+        try {
+            transaction {
+                GroupUsers.deleteWhere { user_id.eq(userId) and group_id.eq(groupId) }
             }
         } catch (e: Exception) {
             e.printStackTrace()

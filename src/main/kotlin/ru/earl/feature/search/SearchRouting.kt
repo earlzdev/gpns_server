@@ -71,6 +71,12 @@ fun Application.configureSearchRouting() {
             post("/denyDriverToDrive") {
                 controller.denyDriverToRideTogether(call)
             }
+            post("/fetchAllCompanionsInGroup") {
+                controller.fetchAllCompanionsInGroup(call)
+            }
+            post("/removeCompanionFromGroup") {
+                controller.removeCompanionFromGroup(call)
+            }
         }
     }
 }
