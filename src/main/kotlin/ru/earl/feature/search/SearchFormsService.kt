@@ -662,6 +662,7 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
             }
             TripNotification.insertNewNotification(notification)
             GroupUsers.removeUserFromGroup(id, groupId)
+            call.respond(HttpStatusCode.OK)
         }
     }
 

@@ -41,4 +41,9 @@ data class DeletedSearchingFormDto(
     val username: String
 )
 
+@Serializable
+data class NotificationIdToMarkAsNotActive(
+    val id: String
+)
+
 interface TripFormDetails
