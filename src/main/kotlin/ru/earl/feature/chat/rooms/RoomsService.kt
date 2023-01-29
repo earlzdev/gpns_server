@@ -24,7 +24,6 @@ interface RoomsService {
     suspend fun markAuthoredMessageAsReadInRoom(call: ApplicationCall)
     suspend fun addNewRoomToDb(call: ApplicationCall)
     suspend fun sendNewRoomToContacts(userId: String, newRoom: RoomDto)
-
 }
 
 class RoomsServiceImpl() : RoomsService, OnlineController() {
@@ -54,7 +53,8 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
                             room.unreadMsgCount,
                             room.isLastMsgRead,
                             isOnline,
-                            room.contactLastAuth
+                            room.contactLastAuth,
+                            room.lastMsgTimestamp
                         )
                         readyRoomsList.add(roomResponse)
                     } else {
@@ -72,7 +72,8 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
                             room.unreadMsgCount,
                             room.isLastMsgRead,
                             isOnline,
-                            room.contactLastAuth
+                            room.contactLastAuth,
+                            room.lastMsgTimestamp
                         )
                         readyRoomsList.add(roomResponse)
                     }
@@ -101,7 +102,8 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
             deletedRoom?.unreadMsgCount ?: 0,
             deletedRoom?.isLastMsgRead ?: 0,
             deletedRoom?.contactOnline ?: 0,
-            deletedRoom?.contactLastAuth ?: ""
+            deletedRoom?.contactLastAuth ?: "",
+            CurrentDateTimeGiver().getCurrentDateAsString()
         )
         val jsonResponse = Json.encodeToString(response)
         val responseDto = SocketModelDto(
@@ -153,7 +155,8 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
             FIRST_UNREAD_MSG_IN_ROOM,
             0,
             newRoomReceiveRemote.contactIsOnline,
-            newRoomReceiveRemote.contactLastAuth
+            newRoomReceiveRemote.contactLastAuth,
+            CurrentDateTimeGiver().getCurrentDateAsString()
         )
         val contactId = User.fetchUserByUsername(newRoomReceiveRemote.contact)?.userId
         RoomOccupancy.initNewRoomOccupancy(newRoomReceiveRemote.roomId)
@@ -176,7 +179,8 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
             FIRST_UNREAD_MSG_IN_ROOM,
             MSG_UNREAD_KEY,
             newRoom.contactOnline,
-            newRoom.contactLastAuth
+            newRoom.contactLastAuth,
+            CurrentDateTimeGiver().getCurrentDateAsString()
         )
         val contactRoomResponse = RoomResponse(
             newRoom.roomId,
@@ -188,7 +192,8 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
             FIRST_UNREAD_MSG_IN_ROOM,
             MSG_UNREAD_KEY,
             newRoom.contactOnline,
-            newRoom.contactLastAuth
+            newRoom.contactLastAuth,
+            CurrentDateTimeGiver().getCurrentDateAsString()
         )
         try {
             val jsonAuthorRoom = Json.encodeToString(authorRoomResponse)

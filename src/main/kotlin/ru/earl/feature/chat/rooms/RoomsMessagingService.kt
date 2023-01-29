@@ -30,14 +30,12 @@ interface MessagingService {
     suspend fun fetchAllMessages(call: ApplicationCall)
 }
 
-class MessagingServiceImpl() : MessagingService, OnlineController() {
+class MessagingServiceImpl : MessagingService, OnlineController() {
     override suspend fun sendMessage(messageJson: String) {
         val receivedMessage = Json.decodeFromString<MessageReceive>(messageJson)
         val userIds = RoomsUsers.fetchUsersIdsInRoom(receivedMessage.roomId)
         val userNames = mutableListOf<String>()
-        val currentDate = Date()
-        val dateFormat: DateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
-        val dateText = dateFormat.format(currentDate)
+        val date = CurrentDateTimeGiver().getCurrentDateAsString()
         for (id in userIds) { userNames.add(User.fetchUserById(id)?.username ?: "") }
         val messageEntity = RoomsMessagesDto(
             receivedMessage.messageId,
@@ -45,11 +43,15 @@ class MessagingServiceImpl() : MessagingService, OnlineController() {
             receivedMessage.authorId,
             receivedMessage.timestamp,
             receivedMessage.messageText,
-            dateText,
+            date,
             receivedMessage.read
         )
         RoomsMessages.insertMessageIntoDb(messageEntity)
-        Room.updateLastMessage(receivedMessage.roomId, receivedMessage.messageText, User.fetchUserById(receivedMessage.authorId)?.username ?: "")
+        Room.updateLastMessage(
+            receivedMessage.roomId,
+            receivedMessage.messageText,
+            User.fetchUserById(receivedMessage.authorId)?.username ?: "",
+            date)
         WebSocketConnectionHandler.messagingClients.values.forEach { member ->
             if (member.roomId == receivedMessage.roomId) {
                 if (RoomOccupancy.checkRoomOccupancy(receivedMessage.roomId) == 2) {
@@ -125,17 +127,21 @@ class MessagingServiceImpl() : MessagingService, OnlineController() {
     }
 
     override suspend fun sendUpdatableMessage(receivedMessage: MessageReceive) {
+        val date = CurrentDateTimeGiver().getCurrentDateAsString()
         val updatableMessage = LastMessageForUpdate(
             receivedMessage.roomId,
             User.fetchUserById(receivedMessage.authorId)?.username ?: "",
             UserDetails.fetchUserDetailsById(receivedMessage.authorId)?.image ?: "",
-            receivedMessage.timestamp,
+            date,
             receivedMessage.messageText,
             MSG_UNREAD_KEY
         )
         Room.updateLastMessage(
-            receivedMessage.roomId, receivedMessage.messageText,
-            User.fetchUserById(receivedMessage.authorId)?.username ?: "")
+            receivedMessage.roomId,
+            receivedMessage.messageText,
+            User.fetchUserById(receivedMessage.authorId)?.username ?: "",
+            date
+        )
         val authorId = receivedMessage.authorId
         val contactId = RoomsUsers.fetchUsersIdsInRoom(receivedMessage.roomId).find { it != authorId }
         val roomOccupancy = RoomOccupancy.checkRoomOccupancy(updatableMessage.roomId)

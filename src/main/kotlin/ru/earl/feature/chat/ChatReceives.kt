@@ -12,7 +12,8 @@ data class NewRoomReceiveRemote(
     val lastMessage: String,
     val lastMessageAuthor: String,
     val contactIsOnline: Int,
-    val contactLastAuth: String
+    val contactLastAuth: String,
+    val lastMsgTimestamp: String
 )
 
 @Serializable

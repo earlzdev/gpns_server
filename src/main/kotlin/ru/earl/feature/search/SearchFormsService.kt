@@ -7,6 +7,7 @@ import io.ktor.server.response.*
 import io.ktor.websocket.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import ru.earl.feature.chat.CurrentDateTimeGiver
 import ru.earl.feature.chat.OnlineController
 import ru.earl.feature.chat.SocketActions
 import ru.earl.feature.chat.SocketModelDto
@@ -514,7 +515,28 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
     }
 
     override suspend fun denyDriverToRideTogether(call: ApplicationCall) {
-
+        authenticate(call)?.apply {
+            val authorUsername = UserDetails.fetchUserDetailsById(this)?.username
+            val driverUsername = call.receive<UserNameDto>().name
+            val notification = TripNotificationsDto(
+                UUID.randomUUID().toString(),
+                authorUsername ?: "",
+                driverUsername,
+                COMPANION_ROLE,
+                DRIVER_ROLE,
+                DISAGREED,
+                CurrentDateTimeGiver().getCurrentDateAsString(),
+                1
+            )
+            val socketModel = SocketModelDto(
+                SocketActions.NEW_NOTIFICATION.toString(),
+                Json.encodeToString(notification)
+            )
+            TripNotification.insertNewNotification(notification)
+            WebSocketConnectionHandler.searchingSocketClients.values.find { it.username == driverUsername }?.apply {
+                this.socket.send(Frame.Text(Json.encodeToString(socketModel)))
+            }
+        }
     }
 
     override suspend fun acceptCompanionToRideTogether(call: ApplicationCall) {
@@ -559,7 +581,28 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
     }
 
     override suspend fun denyCompanionToRideTogether(call: ApplicationCall) {
-
+        authenticate(call)?.apply {
+            val authorUsername = UserDetails.fetchUserDetailsById(this)?.username
+            val companionUsername = call.receive<UserNameDto>().name
+            val notification = TripNotificationsDto(
+                UUID.randomUUID().toString(),
+                authorUsername ?: "",
+                companionUsername,
+                DRIVER_ROLE,
+                COMPANION_ROLE,
+                DISAGREED,
+                CurrentDateTimeGiver().getCurrentDateAsString(),
+                1
+            )
+            val socketModel = SocketModelDto(
+                SocketActions.NEW_NOTIFICATION.toString(),
+                Json.encodeToString(notification)
+            )
+            TripNotification.insertNewNotification(notification)
+            WebSocketConnectionHandler.searchingSocketClients.values.find { it.username == companionUsername }?.apply {
+                this.socket.send(Frame.Text(Json.encodeToString(socketModel)))
+            }
+        }
     }
 
     override suspend fun fetchAllCompanionsInGroup(call: ApplicationCall) {
@@ -685,14 +728,6 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
         private const val COMPANION_LEAVED_GROUP = "COMPANION_LEAVED_GROUP"
         private const val REMOVED_COMPANION_FROM_GROUP = "REMOVED_COMPANION_FROM_GROUP"
         private const val ACTIVE = 1
+        private const val DISAGREED = "DISAGREED"
     }
 }
-
-/*
-notification isInvite
-0 - отказ - не исп
-1 - приглашение
-2 - водитель удалил анкету
-3 - согласие
-4 - отказ - не исп
- */
