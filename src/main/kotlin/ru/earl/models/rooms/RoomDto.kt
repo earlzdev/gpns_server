@@ -16,4 +16,5 @@ data class RoomDto(
     @SerialName("lastMsgRead") val isLastMsgRead: Int,
     @SerialName("contactOnline") val contactOnline: Int,
     @SerialName("contactLastAuth") val contactLastAuth: String,
+    @SerialName("lastMsgTimestamp") val lastMsgTimestamp: String,
 )

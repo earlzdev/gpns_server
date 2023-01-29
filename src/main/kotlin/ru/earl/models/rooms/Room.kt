@@ -17,6 +17,7 @@ object Room : Table("rooms") {
     private val lastMsgRead = Room.integer("lastMsgRead")
     private val contactOnline = Room.integer("contactOnline")
     private val contactLastAuth = Room.varchar("contactLastAuth", 150)
+    private val lastMsgTimestamp = Room.varchar("last_msg_timestamp", 50)
 
     fun insertRoom(room: RoomDto) {
         try {
@@ -33,6 +34,7 @@ object Room : Table("rooms") {
                     it[lastMsgRead] = room.isLastMsgRead
                     it[contactOnline] = room.contactOnline
                     it[contactLastAuth] = room.contactLastAuth
+                    it[lastMsgTimestamp] = room.lastMsgTimestamp
                 }
             }
         } catch (e: Exception) {
@@ -55,7 +57,8 @@ object Room : Table("rooms") {
                     resultRow[unreadMsgCount],
                     resultRow[lastMsgRead],
                     resultRow[contactOnline],
-                    resultRow[contactLastAuth]
+                    resultRow[contactLastAuth],
+                    resultRow[lastMsgTimestamp]
                 )
             }
         } catch (e: Exception) {
@@ -74,12 +77,13 @@ object Room : Table("rooms") {
         }
     }
 
-    fun updateLastMessage(room_id: String, newLastMessage: String, author: String) {
+    fun updateLastMessage(room_id: String, newLastMessage: String, author: String, lastMsgTime: String) {
         try {
             transaction {
                 Room.update({ roomId eq room_id}) {
                     it[lastMessage] = newLastMessage
                     it[lastMessageAuthor] = author
+                    it[lastMsgTimestamp] = lastMsgTime
                 }
             }
         } catch (e: Exception) {
@@ -88,7 +92,6 @@ object Room : Table("rooms") {
     }
 
     fun increaseRoomUnreadMessagesCount(room_Id: String) {
-        println("INCREASE UNREAD MSG COUNTER")
          try {
             transaction {
                 Room.update({ roomId eq room_Id }) {

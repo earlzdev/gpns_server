@@ -20,11 +20,8 @@ import java.util.*
 interface GroupsMessagingService {
 
     suspend fun fetchAllMessagesInGroup(call: ApplicationCall)
-
     suspend fun sendMessageInGroup(messageJson: String)
-
     suspend fun sendUpdateTypingMessageInGroup(call: ApplicationCall)
-
     suspend fun markMessagesAsReadInGroup(call: ApplicationCall)
 }
 
@@ -123,17 +120,19 @@ class GroupsMessagingServiceImpl() : GroupsMessagingService, OnlineController() 
             WebSocketConnectionHandler.roomObserversClients.values.filter { !inGroupUserUsernames.contains(it.provideUsername()) }
         val inGroup =
             WebSocketConnectionHandler.roomObserversClients.values.filter { inGroupUserUsernames.contains(it.provideUsername()) }
-
         if (GroupOccupancy.isSomebodyInGroup(msgReceived.groupId)) {
             inGroup.forEach {
+                println("sent read in group")
                 it.socket.send(Frame.Text(Json.encodeToString(readUpdatableMessageDto)))
             }
         } else {
             inGroup.forEach {
+                println("sent unread in group")
                 it.socket.send(Frame.Text(Json.encodeToString(unreadUpdatableMessageDto)))
             }
         }
         notInGroupUsers.forEach {
+            println("sent unread not in group users")
             it.socket.send(Frame.Text(Json.encodeToString(unreadUpdatableMessageDto)))
         }
         WebSocketConnectionHandler.groupMessagingClients.values.filter { it.groupId == msgReceived.groupId }.forEach {

@@ -14,7 +14,8 @@ data class RoomResponse(
     val unreadMsgCounter: Int,
     val lastMsgRead: Int,
     val contactIsOnline: Int,
-    val contactLastAuth: String
+    val contactLastAuth: String,
+    val lastMsgTimestamp: String
 )
 
 @Serializable
