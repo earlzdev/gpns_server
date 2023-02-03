@@ -13,6 +13,8 @@ import ru.earl.models.group.Groups
 import ru.earl.models.groupMessages.GroupMessages
 import ru.earl.models.groupMessages.GroupMessagesDto
 import ru.earl.models.group_occupancy.GroupOccupancy
+import ru.earl.models.userDetails.UserDetails
+import ru.earl.models.users.User
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -161,6 +163,8 @@ class GroupsMessagingServiceImpl() : GroupsMessagingService, OnlineController() 
 
     override suspend fun markMessagesAsReadInGroup(call: ApplicationCall) {
         val groupId = call.receive<GroupIdReceive>().groupId
+        val lastMessageAuthorUsername = Groups.fetchGroupByGroupId(groupId)?.lastMsgAuthor ?: ""
+        val lastMessageAuthorId = User.fetchUserByUsername(lastMessageAuthorUsername)?.userId
         GroupMessages.markMessagesAsReadInGroup(groupId)
         Groups.setLastMessageAsRead(groupId)
         val markMessagesAsReadResponse = SocketModelDto(
@@ -174,9 +178,11 @@ class GroupsMessagingServiceImpl() : GroupsMessagingService, OnlineController() 
         WebSocketConnectionHandler.groupMessagingClients.values.filter { it.groupId == groupId }.forEach {
             it.socket.send(Frame.Text(Json.encodeToString(markMessagesAsReadResponse)))
         }
-        WebSocketConnectionHandler.roomObserversClients.values.forEach {
-            it.socket.send(Frame.Text(Json.encodeToString(markAuthoredMessagesAsReadInGroup)))
-        }
+//        WebSocketConnectionHandler.roomObserversClients.values.forEach {
+//            it.socket.send(Frame.Text(Json.encodeToString(markAuthoredMessagesAsReadInGroup)))
+//        }
+        WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == lastMessageAuthorId }
+            ?.socket?.send(Frame.Text(Json.encodeToString(markAuthoredMessagesAsReadInGroup)))
         call.respond(HttpStatusCode.OK)
     }
 
