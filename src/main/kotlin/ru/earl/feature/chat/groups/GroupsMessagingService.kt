@@ -178,9 +178,6 @@ class GroupsMessagingServiceImpl() : GroupsMessagingService, OnlineController() 
         WebSocketConnectionHandler.groupMessagingClients.values.filter { it.groupId == groupId }.forEach {
             it.socket.send(Frame.Text(Json.encodeToString(markMessagesAsReadResponse)))
         }
-//        WebSocketConnectionHandler.roomObserversClients.values.forEach {
-//            it.socket.send(Frame.Text(Json.encodeToString(markAuthoredMessagesAsReadInGroup)))
-//        }
         WebSocketConnectionHandler.roomObserversClients.values.find { it.userId == lastMessageAuthorId }
             ?.socket?.send(Frame.Text(Json.encodeToString(markAuthoredMessagesAsReadInGroup)))
         call.respond(HttpStatusCode.OK)
