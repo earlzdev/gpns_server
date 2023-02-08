@@ -4,6 +4,7 @@ import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.Database
 import ru.earl.feature.auth.configureAuthenticationRouting
 import ru.earl.feature.chat.configureChatRouting
+import ru.earl.feature.profile.configureProfileRouting
 import ru.earl.feature.search.configureSearchRouting
 import ru.earl.plugins.*
 import ru.earl.security.token.TokenConfig
@@ -21,8 +22,15 @@ fun Application.module() {
         issuer = environment.config.property("jwt.issuer").getString(),
         audience = environment.config.property("jwt.audience").getString(),
         expiresIn = 365L * 1000L * 60L * 60L * 24L,
-        secret = System.getenv("JWT_SECRET")
+        secret = "gpns"
     )
+
+//    val tokenConfig = TokenConfig(
+//        issuer = environment.config.property("jwt.issuer").getString(),
+//        audience = environment.config.property("jwt.audience").getString(),
+//        expiresIn = 365L * 1000L * 60L * 60L * 24L,
+//        secret = System.getenv("JWT_SECRET")
+//    )
 
     configureSockets()
     configureSerialization()
@@ -32,4 +40,5 @@ fun Application.module() {
     configureAuthenticationRouting(tokenConfig)
     configureChatRouting()
     configureSearchRouting()
+    configureProfileRouting()
 }
