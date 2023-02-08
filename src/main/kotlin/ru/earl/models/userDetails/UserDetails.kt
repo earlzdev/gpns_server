@@ -162,4 +162,16 @@ object UserDetails : Table("users_details") {
             0
         }
     }
+
+    fun updateUserImage(newImageString: String, user_id: String) {
+        try {
+            transaction {
+                UserDetails.update({ userId eq user_id }) {
+                    it[image] = newImageString
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }

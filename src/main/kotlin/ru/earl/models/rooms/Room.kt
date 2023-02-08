@@ -204,4 +204,14 @@ object Room : Table("rooms") {
             e.printStackTrace()
         }
     }
+
+//    fun updateUserAvatarInRoom(newAvatarString: String, user_name: String) {
+//        try {
+//            transaction {
+//                Room.update({  })
+//            }
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//        }
+//    }
 }

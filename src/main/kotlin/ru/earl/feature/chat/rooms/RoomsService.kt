@@ -77,12 +77,10 @@ class RoomsServiceImpl() : RoomsService, OnlineController() {
                         )
                         readyRoomsList.add(roomResponse)
                     }
-                    println("READY ROOMS LIST $readyRoomsList")
                 }
                 call.respond(HttpStatusCode.OK, readyRoomsList)
             }
         } else {
-            println("AUTH PROBLEM")
             call.respond(HttpStatusCode.BadRequest, "Authenticate problem")
         }
     }
