@@ -7,8 +7,8 @@ object Companions : Table("companions") {
 
    private val username = Companions.varchar("username", 50)
    private val userImage = Companions.varchar("user_image", 2500)
-   private val from = Companions.varchar("from", 300)
-   private val to = Companions.varchar("to", 300)
+   private val from = Companions.varchar("fromm", 300)
+   private val to = Companions.varchar("too", 300)
    private val schedule = Companions.varchar("schedule", 150)
    private val actualTripTime = Companions.varchar("actual_trip_time", 150)
    private val ableToPay = Companions.varchar("able_to_pay", 50)

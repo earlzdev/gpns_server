@@ -12,8 +12,8 @@ object RoomsMessages : Table("rooms_messages") {
     private val authorToken = RoomsMessages.varchar("author_id", 36)
     private val timestamp = RoomsMessages.varchar("timestamp", 25)
     private val textMessage = RoomsMessages.varchar("message", 1000)
-    private val messageDate = RoomsMessages.varchar("messageDate", 50)
-    private val read = RoomsMessages.integer("read")
+    private val messageDate = RoomsMessages.varchar("message_date", 50)
+    private val read = RoomsMessages.integer("readd")
 
     fun insertMessageIntoDb(message : RoomsMessagesDto) {
         transaction {

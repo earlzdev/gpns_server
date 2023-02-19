@@ -11,7 +11,7 @@ object User : Table("users") {
     private val username = User.varchar("username", 25)
     private val password = User.varchar("password", 200)
     private val userSalt = User.varchar("salt", 200)
-    private val userId = User.varchar("id", 36)
+    private val userId = User.varchar("idd", 36)
 
     fun insert(userDTO: UserDto) {
         transaction {

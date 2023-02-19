@@ -17,7 +17,6 @@ version = "0.0.1"
 application {
 //    mainClass.set("io.ktor.server.netty.EngineMain")
     mainClass.set("ru.earl.ApplicationKt")
-//    mainClass.set("com.example.ApplicationKt")
 
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
@@ -51,7 +50,6 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-core:$exposed_version")
     implementation("org.jetbrains.exposed:exposed-dao:$exposed_version")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposed_version")
-
 
     implementation("commons-codec:commons-codec:$commons_codec_version")
     sshAntTask("org.apache.ant:ant-jsch:1.10.12")
