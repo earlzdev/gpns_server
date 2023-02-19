@@ -11,7 +11,7 @@ object GroupMessages : Table("group_messages") {
     private val authorImage = GroupMessages.varchar("author_image", 2500)
     private val timestamp = GroupMessages.varchar("timestamp", 100)
     private val messageText = GroupMessages.varchar("message_text", 1000)
-    private val read = GroupMessages.integer("read")
+    private val read = GroupMessages.integer("readd")
 
     fun insertNewMessage(msg: GroupMessagesDto) {
         try {

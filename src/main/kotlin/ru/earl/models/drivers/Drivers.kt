@@ -7,8 +7,8 @@ object Drivers : Table("drivers") {
 
     private val username = Drivers.varchar("username", 50)
     private val userImage = Drivers.varchar("user_image", 2500)
-    private val driveFrom = Drivers.varchar("from", 100)
-    private val driveTo = Drivers.varchar("to", 100)
+    private val driveFrom = Drivers.varchar("fromm", 100)
+    private val driveTo = Drivers.varchar("too", 100)
     private val catchCompanionFrom = Drivers.varchar("can_catch_comp_from", 200)
     private val alsoCanDriveTo = Drivers.varchar("also_can_drive_to", 200)
     private val schedule = Drivers.varchar("schedule", 100)

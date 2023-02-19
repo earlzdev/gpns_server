@@ -7,7 +7,7 @@ import ru.earl.feature.chat.GroupLastMessage
 
 object Groups : Table("groups") {
 
-    private val groupId = Groups.varchar("id", 36)
+    private val groupId = Groups.varchar("idd", 36)
     private val title = Groups.varchar("title", 50)
     private val image = Groups.varchar("image", 2500)
     private val lastMsgText = Groups.varchar("last_message", 1000)

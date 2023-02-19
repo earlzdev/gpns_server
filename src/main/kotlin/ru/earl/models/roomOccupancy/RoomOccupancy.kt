@@ -7,8 +7,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 object RoomOccupancy : Table("room_occupancy") {
 
-    private val roomId = RoomOccupancy.varchar("roomId", 36)
-    private val full = RoomOccupancy.integer("full")
+    private val roomId = RoomOccupancy.varchar("room_id", 36)
+    private val full = RoomOccupancy.integer("fulll")
 
     fun initNewRoomOccupancy(room_id: String) {
         try {
