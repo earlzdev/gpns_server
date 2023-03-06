@@ -5,8 +5,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 object Drivers : Table("drivers") {
 
-    private val username = Drivers.varchar("username", 50)
-    private val userImage = Drivers.varchar("user_image", 2500)
+    private val username = Drivers.varchar("username", 500)
+    private val userImage = Drivers.varchar("user_image", 150000)
     private val driveFrom = Drivers.varchar("fromm", 100)
     private val driveTo = Drivers.varchar("too", 100)
     private val catchCompanionFrom = Drivers.varchar("can_catch_comp_from", 200)

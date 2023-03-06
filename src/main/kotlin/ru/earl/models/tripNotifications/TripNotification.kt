@@ -6,8 +6,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 object TripNotification : Table("trip_notifications") {
 
     private val notificationId = TripNotification.varchar("idd", 36)
-    private val authorUsername = TripNotification.varchar("author_name", 50)
-    private val receiverUsername = TripNotification.varchar("receiver_name", 50)
+    private val authorUsername = TripNotification.varchar("author_name", 500)
+    private val receiverUsername = TripNotification.varchar("receiver_name", 500)
     private val authorTripRole = TripNotification.varchar("author_trip_role", 20)
     private val receiverTripRole = TripNotification.varchar("receiver_trip_role", 20)
     private val type = TripNotification.varchar("typee", 50)

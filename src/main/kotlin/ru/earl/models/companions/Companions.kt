@@ -5,8 +5,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 object Companions : Table("companions") {
 
-   private val username = Companions.varchar("username", 50)
-   private val userImage = Companions.varchar("user_image", 2500)
+   private val username = Companions.varchar("username", 500)
+   private val userImage = Companions.varchar("user_image", 150000)
    private val from = Companions.varchar("fromm", 300)
    private val to = Companions.varchar("too", 300)
    private val schedule = Companions.varchar("schedule", 150)
