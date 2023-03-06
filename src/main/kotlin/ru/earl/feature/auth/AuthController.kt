@@ -6,7 +6,6 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
-import ru.earl.feature.chat.groups.GroupServiceImpl
 import ru.earl.models.group.Groups
 import ru.earl.models.group.GroupsDto
 import ru.earl.models.groupUsers.GroupUsers
@@ -34,96 +33,105 @@ class AuthController(
     suspend fun register(call: ApplicationCall) {
         insertCommonGroup(call)
         val request = call.receive<RegisterRequest>()
-        val currentDate = Date()
-        val dateFormat: DateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
-        val dateText = dateFormat.format(currentDate)
-        try {
-            val userId = UUID.nameUUIDFromBytes(request.email.toByteArray()).toString()
-            val saltedHash = hashingService.generateSaltedHash(request.password)
-            val user = UserDto(
-                request.email,
-                request.username,
-                saltedHash.hash,
-                saltedHash.salt,
-                userId
-            )
-            val userDetails = UserDetailsDto(
-                userId,
-                "",
-                request.username,
-                1,
-                dateText,
-                ""
-            )
-            User.insert(user)
-            UserDetails.insertUserDetails(userDetails)
-            UsersOnline.insertNewUser(UsersOnlineDto(
-                userId,
-                dateText,
-                1
-            ))
-            UsersOnline.setUserOnline(userId)
-            GroupUsers.insertNewUserForCommonGroup(userId, COMMON_GROUP_ID)
-            call.respond(HttpStatusCode.OK, "success")
-        } catch (e: Exception) {
-            e.printStackTrace()
-            call.respond(HttpStatusCode.InternalServerError, "$e")
+        val userByEmail = User.fetchUserByEmail(request.email)
+        val userByName = User.fetchUserByUsername(request.username)
+        if (userByEmail != null) {
+            call.respond(HttpStatusCode(409, "User with this email is already exists"))
+        } else if (userByName != null) {
+            call.respond(HttpStatusCode(409, "User with this name is already exists"))
+        } else {
+            val currentDate = Date()
+            val dateFormat: DateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
+            val dateText = dateFormat.format(currentDate)
+            try {
+                val userId = UUID.nameUUIDFromBytes(request.email.toByteArray()).toString()
+                val saltedHash = hashingService.generateSaltedHash(request.password)
+                val user = UserDto(
+                    request.email,
+                    request.username,
+                    saltedHash.hash,
+                    saltedHash.salt,
+                    userId
+                )
+                val userDetails = UserDetailsDto(
+                    userId,
+                    "",
+                    request.username,
+                    1,
+                    dateText,
+                    ""
+                )
+                User.insert(user)
+                UserDetails.insertUserDetails(userDetails)
+                UsersOnline.insertNewUser(
+                    UsersOnlineDto(
+                        userId,
+                        dateText,
+                        1
+                    )
+                )
+                UsersOnline.setUserOnline(userId)
+                GroupUsers.insertNewUserForCommonGroup(userId, COMMON_GROUP_ID)
+                call.respond(HttpStatusCode.OK, "success")
+            } catch (e: Exception) {
+                e.printStackTrace()
+                call.respond(HttpStatusCode.InternalServerError, "$e")
+            }
         }
     }
 
     suspend fun login(call: ApplicationCall) {
         val request = call.receive<LoginRequest>()
-        println("request login $request")
-        val user = User.fetchUserByEmail(request.email)
-        UsersOnline.setUserOnline(user?.userId!!)
-        println("login fetchuser -> $user")
-        val isValidPassword = hashingService.verify(
-            value = request.password,
-            saltedHash = SaltedHash(
-                hash = user.password,
-                salt = user.userSalt
-            )
-        )
-        println("login isValidPassword  $isValidPassword")
-        println("value -> ${request.password} + salt -> ${user.userSalt} == hash -> ${user.password}")
-        println("login saltedHash  ${SaltedHash(
-            hash = user.password,
-            salt = user.userSalt
-        )}")
-        if (isValidPassword) {
-            val token = tokenService.generate(
-                config = tokenConfig,
-                TokenClaim(
-                    name = "userId",
-                    value = user.userId
+        val userByEmail = User.fetchUserByEmail(request.email)
+        if (userByEmail != null) {
+            val user = User.fetchUserByEmail(request.email)
+            UsersOnline.setUserOnline(user?.userId!!)
+            val isValidPassword = hashingService.verify(
+                value = request.password,
+                saltedHash = SaltedHash(
+                    hash = user.password,
+                    salt = user.userSalt
                 )
             )
-            call.respond(
-                status = HttpStatusCode.OK,
-                message = AuthResponses(
-                    token = token
+            if (isValidPassword) {
+                val token = tokenService.generate(
+                    config = tokenConfig,
+                    TokenClaim(
+                        name = "userId",
+                        value = user.userId
+                    )
                 )
-            )
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = AuthResponses(
+                        token = token
+                    )
+                )
+            } else {
+                call.respond(HttpStatusCode(409, "wrongPassword"))
+            }
+        } else {
+            call.respond(HttpStatusCode(409, "noUserWithSuchEmail"))
         }
     }
 
     private fun insertCommonGroup(call: ApplicationCall) {
-            if (!Groups.checkCommonGroupAvailability()) {
-                val commonGroup = GroupsDto(
-                    COMMON_GROUP_ID,
-                    "Общий чат",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    0,
-                    0,
-                    0
-                )
-                Groups.insertNewGroup(commonGroup)
-                GroupOccupancy.insertNewGroupOccupancy(COMMON_GROUP_ID)
-            }
+        if (!Groups.checkCommonGroupAvailability()) {
+            val commonGroup = GroupsDto(
+                COMMON_GROUP_ID,
+                "Общий чат",
+                "",
+                "",
+                "",
+                "",
+                "",
+                0,
+                0,
+                0
+            )
+            Groups.insertNewGroup(commonGroup)
+            GroupOccupancy.insertNewGroupOccupancy(COMMON_GROUP_ID)
+        }
     }
 
     suspend fun getSecretInfo(call: ApplicationCall) {
