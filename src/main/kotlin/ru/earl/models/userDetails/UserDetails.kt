@@ -10,8 +10,8 @@ import ru.earl.models.users.User
 object UserDetails : Table("users_details") {
 
     private val userId = UserDetails.varchar("user_id", 36)
-    private val image = UserDetails.varchar("image", 2500)
-    private val username = UserDetails.varchar("username", 25)
+    private val image = UserDetails.varchar("image", 150000)
+    private val username = UserDetails.varchar("username", 500)
     private val online = UserDetails.integer("online")
     private val lastAuth = UserDetails.varchar("last_auth", 150)
     private val tripRole = UserDetails.varchar("trip_role", 20)

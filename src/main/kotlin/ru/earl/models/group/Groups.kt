@@ -9,11 +9,11 @@ object Groups : Table("groups") {
 
     private val groupId = Groups.varchar("idd", 36)
     private val title = Groups.varchar("title", 50)
-    private val image = Groups.varchar("image", 2500)
+    private val image = Groups.varchar("image", 150000)
     private val lastMsgText = Groups.varchar("last_message", 1000)
     private val lastMsgAuthor = Groups.varchar("last_message_author", 50)
     private val lastMsgTimestamp = Groups.varchar("last_message_timestamp", 150)
-    private val lastMsgAuthorImage = Groups.varchar("last_message_author_image", 2500)
+    private val lastMsgAuthorImage = Groups.varchar("last_message_author_image", 150000)
     private val companionGroup = Groups.integer("companion_group")
     private val messagesCount = Groups.integer("messages_count")
     private val lastMsgRead = Groups.integer("last_message_read")
