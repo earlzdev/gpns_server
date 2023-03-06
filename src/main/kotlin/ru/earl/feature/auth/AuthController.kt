@@ -31,7 +31,6 @@ class AuthController(
     private val tokenService: TokenService,
     private val tokenConfig: TokenConfig,
 ) {
-
     suspend fun register(call: ApplicationCall) {
         insertCommonGroup(call)
         val request = call.receive<RegisterRequest>()
