@@ -107,7 +107,6 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
                         )
                     )
                 }
-                readyFormsList.removeIf { it.username == username }
                 call.respond(HttpStatusCode.OK, readyFormsList)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -150,7 +149,7 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
                         receive.active
                     ))
                 )
-                WebSocketConnectionHandler.searchingSocketClients.values.filter { it.username != receive.username }.forEach {
+                WebSocketConnectionHandler.searchingSocketClients.values.forEach {
                     it.socket.send(Frame.Text(Json.encodeToString(socketDtoModel)))
                 }
                 UserDetails.setUserTripRoleCompanion(this)
@@ -226,7 +225,7 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
                         receive.active
                     ))
                 )
-                WebSocketConnectionHandler.searchingSocketClients.values.filter { it.username != receive.username }.forEach {
+                WebSocketConnectionHandler.searchingSocketClients.values.forEach {
                     it.socket.send(Frame.Text(Json.encodeToString(socketDtoModel)))
                 }
                 WebSocketConnectionHandler.roomObserversClients.values.filter { it.userId == this }.forEach {
@@ -257,7 +256,7 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
                     SocketActions.REMOVE_DELETED_FORM.toString(),
                     Json.encodeToString(DeletedSearchingFormDto(username))
                 )
-                WebSocketConnectionHandler.searchingSocketClients.values.filter { it.username != username }.forEach {
+                WebSocketConnectionHandler.searchingSocketClients.values.forEach {
                     it.socket.send(Frame.Text(Json.encodeToString(response)))
                 }
                 UserDetails.removeUserTripRole(this)
@@ -318,7 +317,7 @@ class SearchFormsServiceImpl : SearchFormsService, OnlineController() {
                 Groups.deleteGroup(this)
                 GroupUsers.deleteAllUserFromGroup(this)
                 GroupMessages.deleteAllGroupMessages(this)
-                WebSocketConnectionHandler.searchingSocketClients.values.filter { it.username != username }.forEach {
+                WebSocketConnectionHandler.searchingSocketClients.values.forEach {
                     it.socket.send(Frame.Text(Json.encodeToString(response)))
                 }
                 UserDetails.removeUserTripRole(this)
