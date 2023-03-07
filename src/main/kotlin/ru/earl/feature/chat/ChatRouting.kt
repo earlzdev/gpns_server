@@ -27,7 +27,6 @@ fun Application.configureChatRouting() {
         authenticate {
             webSocket("/chat") {
                 chatController.initRoomsObservingSocket(call, this)
-//                chatController.insertCommonGroup(call)
                 try {
                     incoming.consumeEach { frame ->
                         if (frame is Frame.Text) {
